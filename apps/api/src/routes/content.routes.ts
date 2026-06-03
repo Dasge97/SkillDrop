@@ -58,6 +58,7 @@ contentRouter.get(
 
     res.json({
       id: course.id,
+      slug: course.slug,
       title: course.title,
       subtitle: course.subtitle,
       description: course.description,

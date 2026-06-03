@@ -20,4 +20,10 @@ export const demoUsers: UserSeed[] = [
     password: 'skilldrop',
     role: 'MENTOR',
   },
+  {
+    name: 'Ana Admin',
+    email: 'admin@skilldrop.dev',
+    password: 'skilldrop',
+    role: 'ADMIN',
+  },
 ];

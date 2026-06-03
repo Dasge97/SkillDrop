@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import { config } from './config.js';
 import { errorHandler, notFound } from './middleware/error.js';
+import { adminRouter } from './routes/admin.routes.js';
 import { authRouter } from './routes/auth.routes.js';
 import { contentRouter } from './routes/content.routes.js';
 import { meRouter } from './routes/me.routes.js';
@@ -23,6 +24,7 @@ export function createApp() {
   app.use('/mentor', mentorRouter);
   app.use('/me', meRouter);
   app.use('/resources', resourceRouter);
+  app.use('/admin', adminRouter);
 
   app.use(notFound);
   app.use(errorHandler);

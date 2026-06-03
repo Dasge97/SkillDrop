@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/.vite
+**/*.db
+**/*.db-journal
+**/.env
+**/.env.local
+.git
+.gitignore
+*.log
+apps/web/dist
+apps/api/dist
+README*.md

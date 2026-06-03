@@ -1,0 +1,39 @@
+# SkillDrop — despliegue con Docker (API + Web)
+# Uso:
+#   docker compose up --build
+#   Web  -> http://localhost:8080
+#   API  -> http://localhost:4000
+#
+# Cuentas demo (creadas por el seed): student|mentor|admin @skilldrop.dev / skilldrop
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: "file:/data/dev.db"
+      API_PORT: "4000"
+      JWT_SECRET: "${JWT_SECRET:-change-me-in-production}"
+      JWT_EXPIRES_IN: "7d"
+      WEB_ORIGIN: "${WEB_ORIGIN:-http://localhost:8080}"
+    volumes:
+      - skilldrop-data:/data
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: "${VITE_API_URL:-http://localhost:4000}"
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  skilldrop-data:

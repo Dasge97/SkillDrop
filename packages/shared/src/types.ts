@@ -91,6 +91,7 @@ export interface PhaseDTO {
 
 export interface CourseDTO {
   id: string;
+  slug: string;
   title: string;
   subtitle: string;
   description: string;

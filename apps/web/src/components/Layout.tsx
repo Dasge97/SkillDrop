@@ -11,6 +11,7 @@ interface NavItem {
   label: string;
   icon: string;
   mentorOnly?: boolean;
+  adminOnly?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -19,6 +20,7 @@ const NAV: NavItem[] = [
   { to: '/progress', label: 'Progreso', icon: '📈' },
   { to: '/resources', label: 'Recursos', icon: '📚' },
   { to: '/mentor', label: 'Revisión', icon: '🧑‍🏫', mentorOnly: true },
+  { to: '/admin', label: 'Admin', icon: '🛠️', adminOnly: true },
 ];
 
 function ThemeToggle() {
@@ -35,7 +37,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const isMentor = user?.role === 'MENTOR' || user?.role === 'ADMIN';
-  const items = NAV.filter((n) => !n.mentorOnly || isMentor);
+  const isAdmin = user?.role === 'ADMIN';
+  const items = NAV.filter(
+    (n) => (!n.mentorOnly || isMentor) && (!n.adminOnly || isAdmin),
+  );
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -68,6 +73,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <span aria-hidden>{item.icon}</span>
               {item.label}
               {item.mentorOnly && <Badge tone="primary" className="ml-auto">Mentor</Badge>}
+              {item.adminOnly && <Badge tone="danger" className="ml-auto">Admin</Badge>}
             </NavLink>
           ))}
         </nav>

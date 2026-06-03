@@ -110,6 +110,26 @@ npm run dev
 
 ---
 
+## 🐳 Run with Docker
+
+The whole platform runs in two containers (API + Web) via Docker Compose. The API
+auto-applies migrations and seeds the full course on first boot (SQLite persisted in a volume).
+
+```bash
+docker compose up --build
+```
+
+- **Web:** http://localhost:8080
+- **API:** http://localhost:4000
+
+Override defaults with env vars (e.g. `JWT_SECRET`, `WEB_ORIGIN`, `VITE_API_URL`):
+
+```bash
+JWT_SECRET=my-secret VITE_API_URL=http://localhost:4000 docker compose up --build
+```
+
+---
+
 ## 🗂️ Project structure
 
 ```

@@ -16,6 +16,7 @@ import { ProgressView } from './pages/ProgressView';
 import { ResourcesView } from './pages/ResourcesView';
 import { MentorQueue } from './pages/MentorQueue';
 import { MentorReview } from './pages/MentorReview';
+import { Admin } from './pages/admin/Admin';
 import { NotFound } from './pages/NotFound';
 
 function FullScreenLoader() {
@@ -26,12 +27,23 @@ function FullScreenLoader() {
   );
 }
 
-function Protected({ children, mentor }: { children: React.ReactNode; mentor?: boolean }) {
+function Protected({
+  children,
+  mentor,
+  admin,
+}: {
+  children: React.ReactNode;
+  mentor?: boolean;
+  admin?: boolean;
+}) {
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return <FullScreenLoader />;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   if (mentor && user.role !== 'MENTOR' && user.role !== 'ADMIN') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  if (admin && user.role !== 'ADMIN') {
     return <Navigate to="/dashboard" replace />;
   }
   return <AppLayout>{children}</AppLayout>;
@@ -63,6 +75,8 @@ export function App() {
 
       <Route path="/mentor" element={<Protected mentor><MentorQueue /></Protected>} />
       <Route path="/mentor/submission/:id" element={<Protected mentor><MentorReview /></Protected>} />
+
+      <Route path="/admin" element={<Protected admin><Admin /></Protected>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
