@@ -2,11 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import type { PhaseDTO } from '@skilldrop/shared';
 import { api } from '@/lib/api';
-import { Mascot } from '@/components/Mascot';
-import { Badge, Card, CardContent, ProgressBar, Spinner } from '@/components/ui';
-import { phaseStatusMeta } from '@/lib/status';
-
-const DIFF = ['', '⭐', '⭐⭐', '⭐⭐⭐', '⭐⭐⭐⭐', '⭐⭐⭐⭐⭐'];
+import { Icon } from '@/components/icons';
+import { PageHeader } from '@/components/Layout';
+import {
+  Badge,
+  Card,
+  cx,
+  PageLoader,
+  PhaseStatusBadge,
+  ProgressBar,
+  SectionTitle,
+  Stars,
+} from '@/components/ui';
 
 export function PhaseView() {
   const { id } = useParams<{ id: string }>();
@@ -16,66 +23,83 @@ export function PhaseView() {
     enabled: !!id,
   });
 
-  if (isLoading || !phase) {
-    return <div className="flex h-64 items-center justify-center"><Spinner className="h-7 w-7 text-primary" /></div>;
-  }
+  if (isLoading || !phase) return <PageLoader />;
 
-  const meta = phaseStatusMeta[phase.status];
+  const progressTone = phase.status === 'COMPLETED' ? 'success' : 'brand';
 
   return (
-    <div className="space-y-6">
-      <Link to="/roadmap" className="text-sm text-muted-foreground hover:text-foreground">← Roadmap</Link>
+    <div>
+      <PageHeader
+        back={{ to: '/roadmap', label: 'Roadmap' }}
+        eyebrow={phase.code}
+        title={phase.title}
+        subtitle={phase.objective}
+        actions={<PhaseStatusBadge status={phase.status} />}
+      />
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-gradient-to-br from-accent/50 to-card p-6 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <Mascot variant="guide" className="h-16 w-16" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-muted-foreground">{phase.code}</span>
-              <Badge tone={meta.tone}>{meta.icon} {meta.label}</Badge>
-            </div>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight">{phase.title}</h1>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">{phase.objective}</p>
+      {/* Tarjeta de progreso y habilidades */}
+      <Card className="p-6 mb-6 grid sm:grid-cols-[1fr_auto] gap-5 items-center">
+        <div>
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="text-slate-500 dark:text-slate-400">Progreso de la fase</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-200">{phase.progressPercent}%</span>
           </div>
-        </div>
-        <div className="min-w-[160px]">
-          <p className="text-sm text-muted-foreground">Progreso</p>
-          <p className="text-2xl font-bold">{phase.progressPercent}%</p>
-          <ProgressBar value={phase.progressPercent} className="mt-1" />
-        </div>
-      </div>
+          <ProgressBar value={phase.progressPercent} tone={progressTone} className="mb-5" />
 
-      {phase.unlockedSkills.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">Desbloquea:</span>
-          {phase.unlockedSkills.map((s) => <Badge key={s} tone="primary">{s}</Badge>)}
+          {phase.unlockedSkills.length > 0 && (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+                Habilidades que desbloquea
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {phase.unlockedSkills.map((sk) => (
+                  <Badge key={sk} tone="primary" icon="layers">{sk}</Badge>
+                ))}
+              </div>
+            </>
+          )}
         </div>
-      )}
+        <img
+          src="/mascot/guide.png"
+          alt=""
+          className="w-28 h-28 object-contain hidden sm:block"
+        />
+      </Card>
 
-      <div>
-        <h2 className="mb-3 text-lg font-semibold">Lecciones</h2>
-        <div className="grid gap-3">
-          {phase.lessons.map((lesson, i) => (
-            <Link key={lesson.id} to={`/lesson/${lesson.id}`}>
-              <Card className="cursor-pointer transition-all hover:border-primary hover:shadow-md">
-                <CardContent className="flex items-center gap-4 pt-5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-sm font-semibold">
-                    {i + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium">{lesson.title}</h3>
-                    <p className="line-clamp-1 text-sm text-muted-foreground">{lesson.objective}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-                    {lesson.challenge && <span title="Dificultad">{DIFF[lesson.challenge.difficulty]}</span>}
-                    <span>{lesson.estimatedTimeMinutes} min</span>
-                    <span aria-hidden>→</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+      <SectionTitle icon="book" title={`Lecciones (${phase.lessons.length})`} />
+      <div className="space-y-3">
+        {phase.lessons.map((lesson, i) => (
+          <Link key={lesson.id} to={`/lesson/${lesson.id}`} className="block">
+            <Card className="w-full text-left p-4 flex items-center gap-4 hover:shadow-soft-lg hover:border-brand-200 dark:hover:border-brand-500/40 transition-all">
+              <div
+                className={cx(
+                  'shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold',
+                  'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+                )}
+              >
+                {i + 1}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  {lesson.title}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                  {lesson.objective}
+                </p>
+              </div>
+              <div className="hidden sm:flex items-center gap-4 shrink-0 text-slate-400">
+                {lesson.challenge && (
+                  <Stars value={lesson.challenge.difficulty} className="w-3.5 h-3.5" />
+                )}
+                <span className="flex items-center gap-1 text-xs">
+                  <Icon name="clock" className="w-3.5 h-3.5" />
+                  {lesson.estimatedTimeMinutes} min
+                </span>
+                <Icon name="chevronRight" className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+              </div>
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
   );

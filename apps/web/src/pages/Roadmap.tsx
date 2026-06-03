@@ -1,59 +1,99 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import type { PhaseDTO } from '@skilldrop/shared';
+import type { PhaseDTO, PhaseProgressStatus } from '@skilldrop/shared';
 import { getMainCourse } from '@/lib/queries';
-import { Mascot } from '@/components/Mascot';
-import { Badge, Card, CardContent, ProgressBar, Spinner } from '@/components/ui';
-import { phaseStatusMeta } from '@/lib/status';
-import { cn, scoreColor } from '@/lib/utils';
+import { Icon } from '@/components/icons';
+import {
+  cx,
+  Card,
+  PhaseStatusBadge,
+  ProgressBar,
+  gradeText,
+  PageLoader,
+} from '@/components/ui';
+import { PageHeader } from '@/components/Layout';
 
-function PhaseCard({ phase, index }: { phase: PhaseDTO; index: number }) {
+function PhaseCard({ phase }: { phase: PhaseDTO }) {
   const navigate = useNavigate();
-  const meta = phaseStatusMeta[phase.status];
   const locked = phase.status === 'LOCKED';
+  const done = phase.status === 'COMPLETED';
   const challenges = phase.lessons.filter((l) => l.challenge).length;
+
+  const circleClass = cx(
+    'shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg',
+    done
+      ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400'
+      : locked
+        ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'
+        : 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400',
+  );
 
   return (
     <Card
-      onClick={() => !locked && navigate(`/phase/${phase.id}`)}
-      className={cn(
-        'relative transition-all',
-        locked ? 'opacity-60' : 'cursor-pointer hover:border-primary hover:shadow-md',
+      onClick={locked ? undefined : () => navigate(`/phase/${phase.id}`)}
+      className={cx(
+        'w-full text-left p-5 flex items-center gap-5 transition-all',
+        locked
+          ? 'opacity-60'
+          : 'cursor-pointer hover:shadow-soft-lg hover:border-brand-200 dark:hover:border-brand-500/40',
       )}
     >
-      <CardContent className="flex gap-4 pt-5">
-        <div
-          className={cn(
-            'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-bold',
-            phase.status === 'COMPLETED'
-              ? 'bg-success/15 text-success'
-              : locked
-                ? 'bg-muted text-muted-foreground'
-                : 'bg-accent text-accent-foreground',
-          )}
-        >
-          {phase.status === 'COMPLETED' ? '✓' : index}
+      {/* Círculo de número / estado */}
+      <div className={circleClass}>
+        {done ? (
+          <Icon name="check" className="w-6 h-6" />
+        ) : locked ? (
+          <Icon name="lock" className="w-5 h-5" />
+        ) : (
+          phase.order
+        )}
+      </div>
+
+      {/* Contenido principal */}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <span className="text-xs font-mono font-semibold text-slate-400 dark:text-slate-500">
+            FASE {phase.order}
+          </span>
+          <PhaseStatusBadge status={phase.status as PhaseProgressStatus} />
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground">{phase.code}</span>
-            <Badge tone={meta.tone}>{meta.icon} {meta.label}</Badge>
-            {phase.averageScore != null && (
-              <span className={cn('text-xs font-semibold', scoreColor(phase.averageScore))}>
-                media {phase.averageScore}
-              </span>
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+          {phase.title}
+        </h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+          {phase.objective}
+        </p>
+        {!locked && phase.progressPercent > 0 && (
+          <div className="mt-3 max-w-md">
+            <ProgressBar
+              value={phase.progressPercent}
+              tone={done ? 'success' : 'brand'}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Meta lateral */}
+      <div className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 text-right">
+        <div className="flex items-center gap-1.5 text-sm">
+          <Icon
+            name="checkCircle"
+            className={cx('w-4 h-4', gradeText(phase.averageScore))}
+          />
+          <span
+            className={cx(
+              'font-semibold tabular-nums',
+              gradeText(phase.averageScore),
             )}
-          </div>
-          <h3 className="mt-1 font-semibold">{phase.title}</h3>
-          <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{phase.objective}</p>
-          <div className="mt-3 flex items-center gap-3">
-            <ProgressBar value={phase.progressPercent} className="flex-1" />
-            <span className="text-xs text-muted-foreground">
-              {phase.progressPercent}% · {challenges} retos
-            </span>
-          </div>
+          >
+            {phase.averageScore != null ? phase.averageScore.toFixed(1) : '—'}
+          </span>
         </div>
-      </CardContent>
+        <span className="text-xs text-slate-400">{challenges} retos</span>
+        {!locked && (
+          <Icon name="chevronRight" className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+        )}
+      </div>
     </Card>
   );
 }
@@ -64,26 +104,26 @@ export function Roadmap() {
     queryFn: getMainCourse,
   });
 
-  if (isLoading || !course) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Spinner className="h-7 w-7 text-primary" />
-      </div>
-    );
-  }
+  if (isLoading || !course) return <PageLoader />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Mascot variant="guide" className="h-16 w-16" />
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Roadmap del curso</h1>
-          <p className="text-sm text-muted-foreground">{course.title}</p>
-        </div>
+    <div>
+      <PageHeader
+        eyebrow={course.title}
+        title="Roadmap del curso"
+        subtitle="Las fases se desbloquean por dominio. Completa los retos de una fase para abrir la siguiente."
+      />
+
+      {/* Leyenda de estados */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {(['LOCKED', 'AVAILABLE', 'IN_PROGRESS', 'IN_REVIEW', 'COMPLETED'] as PhaseProgressStatus[]).map(
+          (s) => <PhaseStatusBadge key={s} status={s} />,
+        )}
       </div>
-      <div className="grid gap-3">
-        {course.phases.map((phase, i) => (
-          <PhaseCard key={phase.id} phase={phase} index={i} />
+
+      <div className="space-y-3">
+        {course.phases.map((phase) => (
+          <PhaseCard key={phase.id} phase={phase} />
         ))}
       </div>
     </div>

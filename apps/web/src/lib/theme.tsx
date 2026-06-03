@@ -7,7 +7,7 @@ import {
 } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
-const KEY = 'skilldrop_theme';
+const KEY = 'skilldrop-theme';
 
 interface ThemeContextValue {
   theme: Theme;

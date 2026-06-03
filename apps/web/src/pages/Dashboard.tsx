@@ -1,177 +1,151 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { DashboardDTO } from '@skilldrop/shared';
-import { ESTIMATED_LEVEL_LABEL } from '@skilldrop/shared';
 import { api } from '@/lib/api';
-import { Mascot } from '@/components/Mascot';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, ProgressBar, Spinner } from '@/components/ui';
-import { evaluationStatusMeta } from '@/lib/status';
-import { scoreColor } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
+import { Icon } from '@/components/icons';
+import {
+  Badge, Button, Card, EvalStatusBadge, gradeText, PageLoader, ProgressBar, SectionTitle,
+} from '@/components/ui';
+import { cx } from '@/components/ui';
 
-function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
+const GUIDING_PHRASE = 'No avances por completar lecciones. Avanza porque puedes demostrar dominio.';
+
+type Tone = 'brand' | 'emerald' | 'amber' | 'violet';
+function StatCard({ icon, label, value, suffix, tone = 'brand' }: { icon: string; label: string; value: React.ReactNode; suffix?: string; tone?: Tone }) {
+  const tones: Record<Tone, string> = {
+    brand: 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/15',
+    emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15',
+    amber: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/15',
+    violet: 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/15',
+  };
   return (
-    <Card>
-      <CardContent className="pt-5">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="mt-1 text-2xl font-bold">{value}</p>
-        {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
-      </CardContent>
+    <Card className="p-5">
+      <div className={cx('w-9 h-9 rounded-lg flex items-center justify-center mb-3', tones[tone])}><Icon name={icon} className="w-5 h-5" /></div>
+      <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+        {value}{suffix && <span className="text-base font-medium text-slate-400 ml-0.5">{suffix}</span>}
+      </p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{label}</p>
     </Card>
   );
 }
 
 export function Dashboard() {
   const { user } = useAuth();
-  const { data, isLoading } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => api.get<DashboardDTO>('/me/dashboard'),
-  });
+  const navigate = useNavigate();
+  const { data, isLoading } = useQuery({ queryKey: ['dashboard'], queryFn: () => api.get<DashboardDTO>('/me/dashboard') });
 
-  if (isLoading || !data) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Spinner className="h-7 w-7 text-primary" />
-      </div>
-    );
-  }
+  if (isLoading || !data) return <PageLoader />;
 
+  const firstName = (user?.name ?? '').split(' ')[0];
   const ev = data.lastEvaluation;
+  const goContinue = () => navigate(data.nextChallenge ? `/challenge/${data.nextChallenge.id}` : '/roadmap');
 
   return (
-    <div className="space-y-6">
-      {/* Bienvenida */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-gradient-to-br from-accent/60 to-card p-6 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <Mascot variant="guide" className="h-20 w-20" />
+    <div>
+      {/* Banner de bienvenida */}
+      <Card className="overflow-hidden mb-7">
+        <div className="grid sm:grid-cols-[auto_1fr_auto] items-center gap-5 p-6">
+          <img src="/mascot/guide.png" alt="" className="w-24 h-24 object-contain hidden sm:block" />
           <div>
-            <p className="text-sm text-muted-foreground">Hola de nuevo,</p>
-            <h1 className="text-2xl font-extrabold tracking-tight">{user?.name}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{data.course.title}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">¡Hola de nuevo, {firstName}! 👋</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mt-0.5">{data.course.title}</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 italic">“{GUIDING_PHRASE}”</p>
           </div>
+          <Button size="lg" iconRight="arrowRight" onClick={goContinue}>Continuar</Button>
         </div>
-        {data.nextChallenge ? (
-          <Link to={`/challenge/${data.nextChallenge.id}`}>
-            <Button size="lg">Continuar →</Button>
-          </Link>
-        ) : (
-          <Link to="/roadmap">
-            <Button size="lg" variant="outline">Ver roadmap</Button>
-          </Link>
-        )}
-      </div>
+      </Card>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Progreso del curso" value={`${data.progressPercent}%`} />
-        <Stat
-          label="Nota media"
-          value={<span className={scoreColor(data.averageScore)}>{data.averageScore ?? '—'}</span>}
-          sub="mínimo 8 para avanzar"
-        />
-        <Stat label="XP total" value={data.totalXp} sub="🔥 puntos de experiencia" />
-        <Stat label="Racha" value={`${data.streakDays} días`} sub="¡no la rompas!" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+        <StatCard icon="progress" label="Progreso del curso" value={data.progressPercent} suffix="%" tone="brand" />
+        <StatCard icon="checkCircle" label="Nota media" value={data.averageScore != null ? data.averageScore.toFixed(1) : '—'} tone="emerald" />
+        <StatCard icon="bolt" label="XP total" value={data.totalXp.toLocaleString('es')} tone="violet" />
+        <StatCard icon="flame" label="Racha" value={data.streakDays} suffix=" días" tone="amber" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Fase / lección actual */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Tu posición actual</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {data.currentPhase ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Badge tone="primary">{data.currentPhase.code}</Badge>
-                    <p className="mt-1 font-semibold">{data.currentPhase.title}</p>
-                  </div>
-                  <Link to={`/phase/${data.currentPhase.id}`}>
-                    <Button variant="outline" size="sm">Ver fase</Button>
-                  </Link>
+      <div className="grid lg:grid-cols-2 gap-5">
+        {/* Posición actual */}
+        <Card className="p-6">
+          <SectionTitle icon="target" title="Tu posición actual" />
+          {data.currentPhase ? (
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge tone="primary">{data.currentPhase.code}</Badge>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{data.currentPhase.title}</span>
+              </div>
+              {data.currentLesson && (
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                  Lección actual: <span className="font-medium text-slate-700 dark:text-slate-300">{data.currentLesson.title}</span>
+                </p>
+              )}
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+                <span>Progreso del curso</span><span className="font-medium">{data.progressPercent}%</span>
+              </div>
+              <ProgressBar value={data.progressPercent} className="mb-5" />
+              {data.nextChallenge ? (
+                <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">Próximo reto</p>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-3">{data.nextChallenge.title}</p>
+                  <Button size="sm" variant="soft" iconRight="arrowRight" onClick={() => navigate(`/challenge/${data.nextChallenge!.id}`)}>Ir al reto</Button>
                 </div>
-                <ProgressBar value={data.progressPercent} />
-                {data.currentLesson && (
-                  <p className="text-sm text-muted-foreground">
-                    Lección actual: <span className="font-medium text-foreground">{data.currentLesson.title}</span>
-                  </p>
-                )}
-                {data.nextChallenge && (
-                  <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
-                    <Mascot variant="working" className="h-10 w-10" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Próximo reto</p>
-                      <p className="text-sm text-muted-foreground">{data.nextChallenge.title}</p>
-                    </div>
-                    <Link to={`/challenge/${data.nextChallenge.id}`}>
-                      <Button size="sm">Ir</Button>
-                    </Link>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Empieza por el roadmap para activar tu primera fase.</p>
-            )}
-          </CardContent>
+              ) : (
+                <p className="text-sm text-slate-500 dark:text-slate-400">¡Estás al día! Revisa el roadmap para lo siguiente.</p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400">Empieza por el roadmap para activar tu primera fase.</p>
+          )}
         </Card>
 
         {/* Última evaluación */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Última evaluación</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {ev ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Mascot variant={evaluationStatusMeta[ev.status].mascot} className="h-12 w-12" />
-                  <div>
-                    <Badge tone={evaluationStatusMeta[ev.status].tone}>
-                      {evaluationStatusMeta[ev.status].label}
-                    </Badge>
-                    <p className={`text-2xl font-bold ${scoreColor(ev.totalScore)}`}>{ev.totalScore}</p>
-                  </div>
+        <Card className="p-6">
+          <SectionTitle
+            icon="review"
+            title="Última evaluación"
+            action={ev && <Link to={`/submission/${ev.submissionId}`} className="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline">Ver detalle</Link>}
+          />
+          {ev ? (
+            <>
+              <div className="flex items-center gap-5">
+                <div className="text-center shrink-0">
+                  <div className={cx('text-5xl font-extrabold tracking-tight tabular-nums', gradeText(ev.totalScore))}>{ev.totalScore.toFixed(1)}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">/ 10</div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Nivel estimado: {ESTIMATED_LEVEL_LABEL[ev.estimatedLevel]}
-                </p>
-                <p className="line-clamp-3 text-sm text-muted-foreground">{ev.mentorFeedback}</p>
-                <Link to={`/submission/${ev.submissionId}`}>
-                  <Button variant="outline" size="sm" className="w-full">Ver evaluación</Button>
-                </Link>
+                <div className="min-w-0">
+                  <EvalStatusBadge status={ev.status} />
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-3 leading-relaxed">{ev.mentorFeedback}</p>
+                </div>
               </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2 py-4 text-center">
-                <Mascot variant="idea" className="h-16 w-16" />
-                <p className="text-sm text-muted-foreground">Aún no tienes evaluaciones. ¡Entrega tu primer reto!</p>
-              </div>
-            )}
-          </CardContent>
+              {ev.status !== 'APROBADO' && (
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                  <img src="/mascot/working.png" alt="" className="w-16 h-16 object-contain shrink-0" />
+                  <p className="text-sm text-slate-600 dark:text-slate-300">Aplica las mejoras obligatorias y reintenta. Estás cerca del dominio.</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <img src="/mascot/idea.png" alt="" className="w-16 h-16 object-contain shrink-0" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Aún no tienes evaluaciones. ¡Entrega tu primer reto!</p>
+            </div>
+          )}
         </Card>
-      </div>
 
-      {/* Fortalezas / debilidades */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="text-base">💪 Puntos fuertes</CardTitle></CardHeader>
-          <CardContent>
-            {data.strengths.length ? (
-              <div className="flex flex-wrap gap-2">
-                {data.strengths.map((s) => <Badge key={s} tone="success">{s}</Badge>)}
-              </div>
-            ) : <p className="text-sm text-muted-foreground">Se revelarán con tus primeras entregas.</p>}
-          </CardContent>
+        {/* Puntos fuertes */}
+        <Card className="p-6">
+          <SectionTitle icon="sparkles" title="Tus puntos fuertes" />
+          {data.strengths.length ? (
+            <div className="flex flex-wrap gap-2">{data.strengths.map((t) => <Badge key={t} tone="success" icon="check">{t}</Badge>)}</div>
+          ) : <p className="text-sm text-slate-500 dark:text-slate-400">Se revelarán con tus primeras entregas.</p>}
         </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-base">🎯 A mejorar</CardTitle></CardHeader>
-          <CardContent>
-            {data.weaknesses.length ? (
-              <div className="flex flex-wrap gap-2">
-                {data.weaknesses.map((s) => <Badge key={s} tone="warning">{s}</Badge>)}
-              </div>
-            ) : <p className="text-sm text-muted-foreground">Sin debilidades destacadas todavía.</p>}
-          </CardContent>
+
+        {/* A mejorar */}
+        <Card className="p-6">
+          <SectionTitle icon="flag" title="A mejorar" />
+          {data.weaknesses.length ? (
+            <div className="flex flex-wrap gap-2">{data.weaknesses.map((t) => <Badge key={t} tone="warning" icon="alert">{t}</Badge>)}</div>
+          ) : <p className="text-sm text-slate-500 dark:text-slate-400">Sin debilidades destacadas todavía.</p>}
         </Card>
       </div>
     </div>

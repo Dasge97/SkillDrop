@@ -1,154 +1,275 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { ChallengeDTO, SubmissionDTO } from '@skilldrop/shared';
 import { api } from '@/lib/api';
-import { Mascot } from '@/components/Mascot';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Spinner } from '@/components/ui';
-import { submissionStatusMeta } from '@/lib/status';
-import { scoreColor } from '@/lib/utils';
+import { Icon } from '@/components/icons';
+import { PageHeader } from '@/components/Layout';
+import {
+  Badge,
+  Button,
+  Card,
+  PageLoader,
+  SectionTitle,
+  Stars,
+  SubmissionStatusBadge,
+  cx,
+  gradeText,
+} from '@/components/ui';
 
-const DIFF = ['', 'Muy fácil', 'Fácil', 'Media', 'Difícil', 'Muy difícil'];
+/* -------------------------------------------------------------------------- */
+/*  ListCard                                                                   */
+/* -------------------------------------------------------------------------- */
 
-function List({ title, items, icon }: { title: string; items: string[]; icon: string }) {
+function ListCard({
+  icon,
+  title,
+  items,
+  tone = 'default',
+}: {
+  icon: string;
+  title: string;
+  items: string[];
+  tone?: 'default' | 'danger';
+}) {
   if (!items.length) return null;
   return (
-    <div>
-      <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">{icon} {title}</h3>
-      <ul className="space-y-1.5">
+    <Card className="p-5">
+      <h3 className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100 mb-3">
+        <Icon
+          name={icon}
+          className={cx(
+            'w-5 h-5',
+            tone === 'danger' ? 'text-red-500' : 'text-brand-600 dark:text-brand-400',
+          )}
+        />
+        {title}
+      </h3>
+      <ul className="space-y-2">
         {items.map((it, i) => (
-          <li key={i} className="flex gap-2 text-sm text-muted-foreground">
-            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+          <li
+            key={i}
+            className="flex gap-2.5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed"
+          >
+            <span
+              className={cx(
+                'mt-1.5 w-1.5 h-1.5 rounded-full shrink-0',
+                tone === 'danger' ? 'bg-red-400' : 'bg-brand-400',
+              )}
+            />
             {it}
           </li>
         ))}
       </ul>
-    </div>
+    </Card>
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*  ChallengeView                                                              */
+/* -------------------------------------------------------------------------- */
+
 export function ChallengeView() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
   const { data, isLoading } = useQuery({
     queryKey: ['challenge', id],
-    queryFn: () => api.get<{ challenge: ChallengeDTO; submissions: SubmissionDTO[] }>(`/challenges/${id}`),
+    queryFn: () =>
+      api.get<{ challenge: ChallengeDTO; submissions: SubmissionDTO[] }>(`/challenges/${id}`),
     enabled: !!id,
   });
 
-  if (isLoading || !data) {
-    return <div className="flex h-64 items-center justify-center"><Spinner className="h-7 w-7 text-primary" /></div>;
-  }
+  if (isLoading || !data) return <PageLoader />;
 
-  const { challenge, submissions } = data;
+  const { challenge: c, submissions } = data;
 
   return (
-    <div className="space-y-6">
-      <Link to={`/lesson/${challenge.lessonId}`} className="text-sm text-muted-foreground hover:text-foreground">← Volver a la lección</Link>
+    <div>
+      <PageHeader
+        back={{ to: `/lesson/${c.lessonId}`, label: 'Lección' }}
+        title=""
+      />
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-gradient-to-br from-accent/50 to-card p-6 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <Mascot variant="working" className="h-20 w-20" />
-          <div>
-            <p className="text-xs font-semibold uppercase text-primary">Reto práctico</p>
-            <h1 className="text-2xl font-extrabold tracking-tight">{challenge.title}</h1>
-            <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <Badge tone="muted">Dificultad: {DIFF[challenge.difficulty]}</Badge>
-              <Badge tone="muted">⏱ {challenge.timeLimitMinutes} min recomendados</Badge>
-            </div>
+      {/* Hero */}
+      <Card className="p-6 mb-6 grid sm:grid-cols-[auto_1fr_auto] gap-5 items-center">
+        <img
+          src="/mascot/working.png"
+          alt="Mascota trabajando"
+          className="w-24 h-24 object-contain hidden sm:block"
+        />
+        <div>
+          <Badge tone="primary" icon="target" className="mb-2">
+            Reto práctico
+          </Badge>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white text-balance">
+            {c.title}
+          </h1>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+              Dificultad <Stars value={c.difficulty} className="w-4 h-4" />
+            </span>
+            <Badge tone="default" icon="clock">
+              {c.timeLimitMinutes} min recomendados
+            </Badge>
           </div>
         </div>
-        <Link to={`/challenge/${challenge.id}/submit`}>
-          <Button size="lg">Entregar trabajo</Button>
-        </Link>
-      </div>
+        <Button
+          size="lg"
+          icon="upload"
+          onClick={() => navigate(`/challenge/${c.id}/submit`)}
+        >
+          Entregar trabajo
+        </Button>
+      </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <CardHeader><CardTitle>Brief</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-[15px] leading-relaxed">{challenge.brief}</p>
-              {challenge.context && (
-                <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Contexto: </span>{challenge.context}</p>
-              )}
-              {challenge.objective && (
-                <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Objetivo: </span>{challenge.objective}</p>
-              )}
-              {challenge.targetUser && (
-                <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Usuario objetivo: </span>{challenge.targetUser}</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Card><CardContent className="pt-5"><List title="Restricciones" icon="🚫" items={challenge.restrictions} /></CardContent></Card>
-            <Card><CardContent className="pt-5"><List title="Entregables" icon="📦" items={challenge.deliverables} /></CardContent></Card>
-            <Card><CardContent className="pt-5"><List title="Checklist antes de entregar" icon="✅" items={challenge.checklist} /></CardContent></Card>
-            <Card><CardContent className="pt-5"><List title="Errores comunes" icon="⚠️" items={challenge.commonMistakes} /></CardContent></Card>
-          </div>
-        </div>
-
+      <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+        {/* Main column */}
         <div className="space-y-6">
-          {/* Rúbrica */}
-          {challenge.rubric && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">Criterios de evaluación</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                {challenge.rubric.criteria.map((c) => (
-                  <div key={c.id} className="text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{c.name}</span>
-                      {c.isCritical && <Badge tone="danger">crítico</Badge>}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{c.description}</p>
+          {/* Brief */}
+          <Card className="p-6 space-y-5">
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400 mb-1.5">
+                Brief
+              </h2>
+              <p className="text-[15px] leading-relaxed text-slate-700 dark:text-slate-200">
+                {c.brief}
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4 pt-1">
+              {(
+                [
+                  ['Contexto', c.context],
+                  ['Objetivo', c.objective],
+                  ['Usuario objetivo', c.targetUser],
+                ] as [string, string | undefined][]
+              )
+                .filter(([, v]) => !!v)
+                .map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                      {label}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                      {value}
+                    </p>
                   </div>
                 ))}
-                <p className="pt-2 text-xs text-muted-foreground">
-                  Cada criterio se puntúa de 1 a 10. Para aprobar la fase: media ≥ 8 y ningún crítico &lt; 7.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+            </div>
+          </Card>
 
-          {/* Skills */}
-          {challenge.skills.length > 0 && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">Habilidades evaluadas</CardTitle></CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {challenge.skills.map((s) => <Badge key={s} tone="primary">{s}</Badge>)}
-              </CardContent>
-            </Card>
-          )}
+          {/* 4 list cards */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <ListCard icon="lock" title="Restricciones" items={c.restrictions} />
+            <ListCard icon="inbox" title="Entregables" items={c.deliverables} />
+            <ListCard
+              icon="check"
+              title="Checklist antes de entregar"
+              items={c.checklist}
+            />
+            <ListCard
+              icon="alert"
+              title="Errores comunes"
+              items={c.commonMistakes}
+              tone="danger"
+            />
+          </div>
+        </div>
 
-          {/* Historial */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Tus entregas</CardTitle></CardHeader>
-            <CardContent>
-              {submissions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Aún no has entregado este reto.</p>
-              ) : (
-                <div className="space-y-2">
-                  {submissions.map((s) => (
-                    <Link
-                      key={s.id}
-                      to={`/submission/${s.id}`}
-                      className="flex items-center justify-between rounded-lg border border-border p-2.5 text-sm hover:border-primary"
-                    >
-                      <span className="font-medium">v{s.version}</span>
-                      <div className="flex items-center gap-2">
-                        {s.evaluation && (
-                          <span className={`font-semibold ${scoreColor(s.evaluation.totalScore)}`}>
-                            {s.evaluation.totalScore}
-                          </span>
-                        )}
-                        <Badge tone={submissionStatusMeta[s.status].tone}>
-                          {submissionStatusMeta[s.status].label}
+        {/* Sidebar */}
+        <div className="space-y-5 lg:sticky lg:top-8">
+          {/* Criterios de evaluación */}
+          {c.rubric && (
+            <Card className="p-5">
+              <SectionTitle icon="review" title="Criterios de evaluación" className="!mb-3" />
+              <div className="space-y-3">
+                {c.rubric.criteria.map((cr) => (
+                  <div
+                    key={cr.id}
+                    className="border-b border-slate-100 dark:border-slate-800 last:border-0 pb-3 last:pb-0"
+                  >
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                        {cr.name}
+                      </p>
+                      {cr.isCritical && (
+                        <Badge tone="danger" className="!text-[10px] !px-1.5">
+                          crítico
                         </Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                      {cr.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 rounded-lg bg-brand-50/60 dark:bg-brand-500/10 p-3 flex gap-2">
+                <Icon
+                  name="info"
+                  className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5"
+                />
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Cada criterio se puntúa de 1 a 10. Para aprobar la fase: media ≥ 8 y ningún
+                  crítico &lt; 7.
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* Habilidades evaluadas */}
+          {c.skills.length > 0 && (
+            <Card className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+                Habilidades evaluadas
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {c.skills.map((s) => (
+                  <Badge key={s} tone="primary" icon="layers">
+                    {s}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Historial de entregas */}
+          <Card className="p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+              Tus entregas
+            </p>
+            {submissions.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Aún no has entregado este reto.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {submissions.map((sub) => (
+                  <Link
+                    key={sub.id}
+                    to={`/submission/${sub.id}`}
+                    className="w-full flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2.5 hover:border-brand-300 dark:hover:border-brand-500/40 transition-colors text-left"
+                  >
+                    <span className="text-sm font-mono font-semibold text-slate-400">
+                      v{sub.version}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <SubmissionStatusBadge status={sub.status} />
+                    </div>
+                    {sub.evaluation != null && (
+                      <span
+                        className={cx(
+                          'text-sm font-bold tabular-nums',
+                          gradeText(sub.evaluation.totalScore),
+                        )}
+                      >
+                        {sub.evaluation.totalScore.toFixed(1)}
+                      </span>
+                    )}
+                    <Icon name="arrowRight" className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+                  </Link>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
       </div>
