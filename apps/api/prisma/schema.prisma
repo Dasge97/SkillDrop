@@ -1,0 +1,227 @@
+// Prisma schema — Plataforma de formación Figma / UI·UX / Product Design
+// DB: SQLite en desarrollo. Migrable a Postgres cambiando `provider` + DATABASE_URL.
+// Nota: SQLite (Prisma 5) no soporta enums, arrays escalares ni Json.
+//  -> los enums se guardan como String (validados con los enums de @skilldrop/shared)
+//  -> las listas/objetos se guardan como String con JSON serializado (helpers en lib/json).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(cuid())
+  name             String
+  email            String    @unique
+  passwordHash     String
+  role             String    @default("STUDENT") // STUDENT | MENTOR | ADMIN
+  totalXp          Int       @default(0)
+  streakDays       Int       @default(0)
+  timeSpentMinutes Int       @default(0)
+  lastActiveAt     DateTime?
+  preferences      String    @default("{}") // JSON: { theme }
+  currentPhaseId   String?
+  currentLessonId  String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  submissions   Submission[]
+  skillProgress UserSkillProgress[]
+  phaseProgress UserPhaseProgress[]
+  evaluations   Evaluation[]        @relation("MentorEvaluations")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  subtitle    String
+  description String
+  promise     String
+  level       String
+  createdAt   DateTime @default(now())
+
+  phases Phase[]
+}
+
+model Phase {
+  id             String   @id @default(cuid())
+  courseId       String
+  code           String // "FASE 0", "FASE 1", ...
+  title          String
+  objective      String
+  order          Int
+  requiredScore  Int      @default(8)
+  unlockedSkills String   @default("[]") // JSON string[] de slugs de skill
+  projects       String   @default("[]") // JSON string[] descripción de proyectos
+  createdAt      DateTime @default(now())
+
+  course   Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons  Lesson[]
+  progress UserPhaseProgress[]
+
+  @@unique([courseId, order])
+}
+
+model Lesson {
+  id                   String   @id @default(cuid())
+  phaseId              String
+  title                String
+  objective            String
+  theory               String
+  example              String   @default("")
+  concepts             String   @default("[]") // JSON string[]
+  tools                String   @default("[]") // JSON string[]
+  order                Int
+  estimatedTimeMinutes Int      @default(30)
+  createdAt            DateTime @default(now())
+
+  phase     Phase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  challenge Challenge?
+
+  @@unique([phaseId, order])
+}
+
+model Challenge {
+  id               String   @id @default(cuid())
+  lessonId         String   @unique
+  title            String
+  brief            String
+  context          String   @default("")
+  objective        String   @default("")
+  targetUser       String   @default("")
+  restrictions     String   @default("[]") // JSON string[]
+  deliverables     String   @default("[]") // JSON string[]
+  checklist        String   @default("[]") // JSON string[]
+  commonMistakes   String   @default("[]") // JSON string[]
+  difficulty       Int      @default(1) // 1-5
+  timeLimitMinutes Int      @default(45)
+  skills           String   @default("[]") // JSON string[] de slugs evaluados
+  createdAt        DateTime @default(now())
+
+  lesson      Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  rubric      Rubric?
+  submissions Submission[]
+}
+
+model Rubric {
+  id          String @id @default(cuid())
+  challengeId String @unique
+
+  challenge Challenge         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  criteria  RubricCriterion[]
+}
+
+model RubricCriterion {
+  id          String  @id @default(cuid())
+  rubricId    String
+  name        String
+  description String  @default("")
+  maxScore    Int     @default(10)
+  weight      Float   @default(1)
+  isCritical  Boolean @default(false)
+  order       Int     @default(0)
+
+  rubric Rubric                     @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  scores EvaluationCriterionScore[]
+}
+
+model Submission {
+  id          String   @id @default(cuid())
+  userId      String
+  challengeId String
+  figmaUrl    String?
+  screenshots String   @default("[]") // JSON string[] (urls)
+  notes       String   @default("")
+  version     Int      @default(1)
+  status      String   @default("SUBMITTED") // DRAFT|SUBMITTED|IN_REVIEW|APPROVED|NEEDS_WORK|REDO
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge  Challenge   @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  evaluation Evaluation?
+
+  @@index([userId, challengeId])
+}
+
+model Evaluation {
+  id                   String   @id @default(cuid())
+  submissionId         String   @unique
+  mentorId             String?
+  totalScore           Float
+  mentorFeedback       String
+  requiredImprovements String   @default("[]") // JSON string[]
+  optionalImprovements String   @default("[]") // JSON string[]
+  status               String // APROBADO | REQUIERE_MEJORAS | REHACER
+  estimatedLevel       String // PRINCIPIANTE | JUNIOR_BAJO | ...
+  createdAt            DateTime @default(now())
+
+  submission     Submission                 @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  mentor         User?                      @relation("MentorEvaluations", fields: [mentorId], references: [id])
+  criteriaScores EvaluationCriterionScore[]
+}
+
+model EvaluationCriterionScore {
+  id           String @id @default(cuid())
+  evaluationId String
+  criterionId  String
+  score        Int
+  comment      String @default("")
+
+  evaluation Evaluation      @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criterion  RubricCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  category    String @default("General")
+  description String @default("")
+  order       Int    @default(0)
+
+  progress UserSkillProgress[]
+}
+
+model UserSkillProgress {
+  id                 String @id @default(cuid())
+  userId             String
+  skillId            String
+  level              Int    @default(0) // 0-5
+  averageScore       Float?
+  completedExercises Int    @default(0)
+  evidence           String @default("[]") // JSON string[]
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+}
+
+model UserPhaseProgress {
+  id      String @id @default(cuid())
+  userId  String
+  phaseId String
+  status  String @default("LOCKED") // LOCKED|AVAILABLE|IN_PROGRESS|IN_REVIEW|COMPLETED
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phase Phase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, phaseId])
+}
+
+model Resource {
+  id          String  @id @default(cuid())
+  title       String
+  description String  @default("")
+  url         String
+  type        String  @default("link") // link|video|template|library|article
+  category    String  @default("General")
+  phaseCode   String?
+  order       Int     @default(0)
+}
