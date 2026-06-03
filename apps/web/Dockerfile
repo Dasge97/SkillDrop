@@ -15,8 +15,10 @@ COPY tsconfig.base.json ./
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
 
-# 3. URL de la API embebida en el bundle (configurable en build).
-ARG VITE_API_URL=http://localhost:4000
+# 3. URL de la API embebida en el bundle. Por defecto RELATIVA (/api), que nginx
+#    redirige al servicio `api`. Así funciona igual en local y en producción
+#    (single-origin), sin depender de localhost.
+ARG VITE_API_URL=/api
 RUN echo "VITE_API_URL=$VITE_API_URL" > apps/web/.env
 
 RUN npm run build --workspace=apps/web

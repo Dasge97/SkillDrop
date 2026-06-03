@@ -1,10 +1,12 @@
-# SkillDrop — despliegue con Docker (API + Web)
-# Uso:
-#   docker compose up --build
-#   Web  -> http://localhost:8080
-#   API  -> http://localhost:4000
+# SkillDrop — despliegue con Docker (single-origin)
 #
-# Cuentas demo (creadas por el seed): student|mentor|admin @skilldrop.dev / skilldrop
+# Arquitectura: un único servicio público (web/nginx) que sirve el frontend y
+# hace de reverse-proxy de /api -> servicio interno `api`. Pensado para CodeHive
+# (Traefik apunta a skilldrop.code-hive.space -> web:80). Ver spec.md (bloque
+# Deployment) y README_DEPLOY.md.
+#
+# Local:  docker compose up --build  ->  http://localhost:8080
+# Cuentas demo: student|mentor|admin @skilldrop.dev / skilldrop
 
 services:
   api:
@@ -16,11 +18,21 @@ services:
       API_PORT: "4000"
       JWT_SECRET: "${JWT_SECRET:-change-me-in-production}"
       JWT_EXPIRES_IN: "7d"
-      WEB_ORIGIN: "${WEB_ORIGIN:-http://localhost:8080}"
+      # Mismo origen detrás del proxy; configurable para el dominio público.
+      WEB_ORIGIN: "${WEB_ORIGIN:-https://skilldrop.code-hive.space}"
+      NODE_ENV: "production"
     volumes:
       - skilldrop-data:/data
-    ports:
-      - "4000:4000"
+    # Sin `ports`: la API NO se publica al host, solo es accesible por la red
+    # interna de Docker (la alcanza `web` vía http://api:4000).
+    expose:
+      - "4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
   web:
@@ -28,11 +40,20 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        VITE_API_URL: "${VITE_API_URL:-http://localhost:4000}"
+        # Ruta relativa: el frontend llama a /api (lo resuelve nginx).
+        VITE_API_URL: "${VITE_API_URL:-/api}"
+    # Único servicio público. Se publica solo en loopback; Traefik (CodeHive)
+    # enruta el dominio hacia este puerto.
     ports:
-      - "8080:80"
+      - "127.0.0.1:${WEB_PORT:-8080}:80"
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
 volumes:

@@ -112,21 +112,17 @@ npm run dev
 
 ## 🐳 Run with Docker
 
-The whole platform runs in two containers (API + Web) via Docker Compose. The API
+The whole platform runs via Docker Compose as a **single public service** (`web`/nginx)
+that serves the SPA and reverse-proxies `/api` to the internal `api` service. The API
 auto-applies migrations and seeds the full course on first boot (SQLite persisted in a volume).
 
 ```bash
-docker compose up --build
+JWT_SECRET=my-secret docker compose up --build
 ```
 
-- **Web:** http://localhost:8080
-- **API:** http://localhost:4000
+- **App:** http://localhost:8080 (the API is reached at `/api`, not published separately)
 
-Override defaults with env vars (e.g. `JWT_SECRET`, `WEB_ORIGIN`, `VITE_API_URL`):
-
-```bash
-JWT_SECRET=my-secret VITE_API_URL=http://localhost:4000 docker compose up --build
-```
+See [README_DEPLOY.md](README_DEPLOY.md) for production deployment (CodeHive / Traefik).
 
 ---
 

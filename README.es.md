@@ -112,21 +112,17 @@ npm run dev
 
 ## 🐳 Despliegue con Docker
 
-Toda la plataforma corre en dos contenedores (API + Web) con Docker Compose. La API
-aplica las migraciones y siembra el curso completo en el primer arranque (SQLite persistido en un volumen).
+Toda la plataforma corre con Docker Compose como un **único servicio público** (`web`/nginx)
+que sirve el SPA y hace de reverse-proxy de `/api` hacia el servicio interno `api`. La API
+aplica migraciones y siembra el curso completo en el primer arranque (SQLite en un volumen).
 
 ```bash
-docker compose up --build
+JWT_SECRET=mi-secreto docker compose up --build
 ```
 
-- **Web:** http://localhost:8080
-- **API:** http://localhost:4000
+- **App:** http://localhost:8080 (la API se alcanza en `/api`, no se publica aparte)
 
-Puedes sobreescribir los valores por defecto con variables de entorno (`JWT_SECRET`, `WEB_ORIGIN`, `VITE_API_URL`):
-
-```bash
-JWT_SECRET=mi-secreto VITE_API_URL=http://localhost:4000 docker compose up --build
-```
+Consulta [README_DEPLOY.md](README_DEPLOY.md) para el despliegue en producción (CodeHive / Traefik).
 
 ---
 

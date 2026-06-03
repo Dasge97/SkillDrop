@@ -1094,3 +1094,32 @@ Priorizar:
 10. Base preparada para IA futura.
 
 El primer objetivo es un MVP funcional con el curso de Figma cargado como contenido inicial.
+
+---
+
+## 21. Deployment
+
+SkillDrop se despliega como **multi-container Docker Compose** con un único servicio
+público (`web`, nginx) que sirve el frontend y hace de reverse-proxy de `/api` hacia
+el servicio interno `api` (Express). El servicio `api` no se publica al host.
+
+```yaml
+deployment:
+  mode: docker-compose
+  public_service: web
+  internal_port: 80
+  healthcheck_path: /
+```
+
+- **mode:** docker-compose
+- **public_service:** web
+- **internal_port:** 80
+- **healthcheck_path:** /
+
+Notas:
+- El frontend usa rutas relativas (`VITE_API_URL=/api`); nada de `localhost` en el bundle.
+- nginx enruta `location /api/ → http://api:4000/` (la barra final elimina el prefijo).
+- La BD SQLite persiste en el volumen `skilldrop-data`; las migraciones y el seed
+  se ejecutan automáticamente en el primer arranque.
+- Healthcheck público: `GET /` (nginx). Healthcheck de la API: `GET /api/health`.
+- Detalles operativos en `README_DEPLOY.md`.
