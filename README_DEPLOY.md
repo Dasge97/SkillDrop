@@ -78,3 +78,19 @@ JWT_SECRET="<un-secreto-fuerte>" docker compose up -d --build
 - **Reiniciar:** `docker compose restart`
 - **Resetear datos:** `docker compose down -v` (borra el volumen → vuelve a sembrar al arrancar).
 - **Actualizar:** `git pull && docker compose up -d --build`
+
+### Añadir/actualizar contenido sin borrar datos
+
+No ejecutes `npm run db:seed` ni `npx tsx prisma/seed.ts` en producción: ese seed es
+destructivo y limpia entregas, evaluaciones y progreso antes de sembrar.
+
+Para sincronizar cursos, fases, lecciones, retos, skills y recursos conservando datos
+existentes:
+
+```bash
+# En el servidor, después de actualizar y reconstruir los contenedores:
+docker compose exec api npm run db:seed:additive
+```
+
+Este seed aditivo hace `upsert` del contenido y solo crea los usuarios demo si faltan;
+no resetea contraseñas existentes ni elimina progreso.
