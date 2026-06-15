@@ -4,67 +4,24 @@ export const conceptP00: PhaseSeed = {
   code: 'FASE 0',
   title: 'Cliente, servidor y el viaje de la petición',
   objective:
-    'Construir el modelo mental: quién pide y quién responde, y qué viaja por la red.',
+    'Construir el modelo mental del round-trip: quién pide, quién responde y qué viaja.',
   unlockedSkills: ['http'],
   projects: [],
   lessons: [
+    // ── L1 ─────────────────────────────────────────────────────────────────
     {
-      title: 'Cliente y servidor: dos roles',
+      title: '¿Quién habla primero?',
       objective:
-        'Entender qué es un cliente, qué es un servidor y por qué la web separa estos dos roles.',
+        'Identificar cuál de los dos actores inicia siempre la conversación en la web.',
       theory:
-        'En la web, toda comunicación ocurre entre dos actores con roles bien definidos. El **cliente** es quien solicita información o recursos: normalmente un navegador, una app móvil o cualquier programa que quiera obtener o enviar datos. El **servidor** es quien espera peticiones, las procesa y devuelve una respuesta. Nunca inicia la conversación; reacciona.\n\n' +
-        'Esta separación existe por una razón práctica: centralizar la lógica y los datos en un lugar controlado (el servidor) mientras los clientes —que pueden ser millones y de muchos tipos— solo consumen lo que necesitan. El servidor no sabe ni le importa si quien le habla es un navegador, una app o un script.\n\n' +
-        'El modelo es asimétrico: **siempre es el cliente quien da el primer paso**. El servidor no puede "llamar" a un cliente por iniciativa propia en el modelo clásico HTTP (existen técnicas especiales para eso, pero son excepciones). Esta asimetría es fundamental y conviene grabársela desde el principio.',
-      concepts: ['cliente', 'servidor', 'roles', 'asimetría'],
+        'En la web existe una regla fundamental: alguien tiene que pedir antes de que alguien pueda responder. A ese «alguien que pide» lo llamamos cliente (un navegador, una app móvil, un script) y al «alguien que responde» lo llamamos servidor.\n\nEsta relación es asimétrica por diseño. El servidor no puede «llamarte» por iniciativa propia en el modelo clásico HTTP: espera pasivamente hasta que llega una petición. Solo entonces actúa y devuelve una respuesta.\n\nEntender este rol activo/pasivo es la base de todo lo que viene después: sin saber quién inicia, es imposible razonar sobre errores de red, tiempos de espera o problemas de seguridad.',
+      concepts: ['cliente', 'servidor', 'petición', 'respuesta'],
       tools: [],
       estimatedTimeMinutes: 8,
       challenge: {
-        title: '¿Quién habla primero?',
-        brief: 'Identifica cuál de los dos roles inicia siempre la comunicación en la web.',
-        difficulty: 1,
-        timeLimitMinutes: 3,
-        skills: ['http'],
-        rubric: [
-          {
-            name: 'Comprensión',
-            description: 'Demuestra que entiende el concepto',
-            isCritical: true,
-          },
-        ],
-        concept: {
-          kind: 'quiz',
-          prompt: '¿Quién inicia siempre la conversación en la web?',
-          runner: 'none',
-          quiz: {
-            options: [
-              { id: 'a', text: 'El cliente' },
-              { id: 'b', text: 'El servidor' },
-              { id: 'c', text: 'Ambos a la vez' },
-              { id: 'd', text: 'El navegador del servidor' },
-            ],
-            correctIds: ['a'],
-            multiple: false,
-            explanation:
-              'En HTTP clásico, siempre es el cliente quien abre la conversación enviando una petición. El servidor espera pasivamente y solo responde cuando recibe una. Nunca toma la iniciativa.',
-          },
-        },
-      },
-    },
-    {
-      title: 'El viaje de una petición (HTTP)',
-      objective:
-        'Conocer las partes que componen una petición HTTP y una respuesta HTTP, y saber qué rol juega cada una.',
-      theory:
-        'Cuando un cliente quiere hablar con un servidor, envía una **petición HTTP**. Esa petición tiene cuatro partes: el **método** (qué quiere hacer: GET para obtener, POST para enviar datos, etc.), la **ruta** (a qué recurso concreto se dirige, como `/usuarios/42`), las **cabeceras** (metadatos: tipo de contenido esperado, idioma, token de autenticación…) y, opcionalmente, un **cuerpo** con datos adicionales (por ejemplo, el JSON con el formulario que acaba de rellenar el usuario).\n\n' +
-        'El servidor procesa la petición y devuelve una **respuesta**. Esta también tiene cabeceras, un cuerpo opcional con el contenido solicitado, y lo más importante para saber si todo fue bien: el **código de estado**. Es un número de tres cifras que resume el resultado. Los 2xx indican éxito (200 OK, 201 Created), los 4xx indican error del cliente (404 Not Found, 401 Unauthorized) y los 5xx indican error del servidor (500 Internal Server Error).\n\n' +
-        'Memorizar todos los códigos no es el objetivo; lo importante es el concepto: el código de estado es la forma estándar y universal que tiene el servidor de decirle al cliente "te entendí y esto pasó". Es el primer dato que cualquier cliente debe leer antes de tocar el cuerpo de la respuesta.',
-      concepts: ['petición HTTP', 'método', 'ruta', 'cabeceras', 'cuerpo', 'código de estado', 'respuesta HTTP'],
-      tools: [],
-      estimatedTimeMinutes: 10,
-      challenge: {
-        title: 'Anatomía de la respuesta',
-        brief: 'Identifica qué parte de la respuesta HTTP indica si la petición tuvo éxito o falló.',
+        title: '¿Quién inicia la conversación?',
+        brief:
+          'Elige la opción que describe correctamente quién empieza siempre el intercambio de mensajes en HTTP.',
         difficulty: 1,
         timeLimitMinutes: 3,
         skills: ['http'],
@@ -78,19 +35,109 @@ export const conceptP00: PhaseSeed = {
         concept: {
           kind: 'quiz',
           prompt:
-            'Haces una petición al servidor para obtener un perfil de usuario. ¿Qué parte de la respuesta te dice de forma estándar si todo fue bien o algo falló?',
+            'En el modelo HTTP clásico, ¿quién inicia siempre la conversación entre cliente y servidor?',
           runner: 'none',
           quiz: {
             options: [
-              { id: 'a', text: 'El método HTTP' },
-              { id: 'b', text: 'La ruta del recurso' },
-              { id: 'c', text: 'El código de estado' },
-              { id: 'd', text: 'Una cabecera cualquiera' },
+              { id: 'a', text: 'El servidor, porque está siempre encendido y espera conexiones.' },
+              { id: 'b', text: 'El cliente, enviando una petición al servidor.' },
+              { id: 'c', text: 'Ambos pueden iniciar indistintamente.' },
+              { id: 'd', text: 'El router de red, que decide quién habla primero.' },
+            ],
+            correctIds: ['b'],
+            multiple: false,
+            explanation:
+              'En HTTP el cliente es siempre el actor activo: envía una petición (request) y el servidor responde (response). El servidor no puede iniciar un intercambio por sí solo en el modelo clásico.',
+          },
+        },
+      },
+    },
+
+    // ── L2 ─────────────────────────────────────────────────────────────────
+    {
+      title: 'La respuesta tiene partes',
+      objective:
+        'Reconocer qué parte de la respuesta HTTP comunica el resultado de la operación.',
+      theory:
+        'Cuando el servidor responde, su mensaje no es solo el contenido que pediste. Incluye varias partes: una línea de estado con un código numérico, un conjunto de cabeceras con metadatos y, opcionalmente, un cuerpo con datos.\n\nEl código de estado es el semáforo de HTTP. Un 200 dice «todo bien», un 404 dice «no lo encontré» y un 500 dice «algo estalló en el servidor». Sin leer ese código no sabes si tu petición tuvo éxito.\n\nLas cabeceras dan contexto adicional (tipo de contenido, caché, autenticación), pero no son el indicador principal de éxito o error. El cuerpo contiene los datos útiles, pero tampoco dice si la operación fue exitosa: eso es tarea exclusiva del código de estado.',
+      concepts: ['código de estado', 'cabeceras', 'cuerpo', 'respuesta HTTP'],
+      tools: [],
+      estimatedTimeMinutes: 8,
+      challenge: {
+        title: '¿Qué parte indica si todo fue bien?',
+        brief:
+          'Identifica cuál de los elementos de una respuesta HTTP es el indicador principal de éxito o error.',
+        difficulty: 1,
+        timeLimitMinutes: 3,
+        skills: ['http'],
+        rubric: [
+          {
+            name: 'Comprensión',
+            description: 'Demuestra que entiende el concepto',
+            isCritical: true,
+          },
+        ],
+        concept: {
+          kind: 'quiz',
+          prompt:
+            '¿Qué parte de una respuesta HTTP indica si la operación fue exitosa o si hubo un error?',
+          runner: 'none',
+          quiz: {
+            options: [
+              { id: 'a', text: 'El método HTTP (GET, POST…).' },
+              { id: 'b', text: 'La ruta o URL solicitada.' },
+              { id: 'c', text: 'El código de estado (200, 404, 500…).' },
+              { id: 'd', text: 'La cabecera Content-Type.' },
             ],
             correctIds: ['c'],
             multiple: false,
             explanation:
-              'El código de estado es un número de tres cifras en la respuesta que resume el resultado de forma universal: 2xx es éxito, 4xx es error del cliente y 5xx es error del servidor. Es lo primero que debe comprobar cualquier cliente antes de procesar el cuerpo.',
+              'El código de estado es el indicador estándar de resultado en HTTP: 2xx = éxito, 4xx = error del cliente, 5xx = error del servidor. El método y la ruta pertenecen a la petición, no a la respuesta; Content-Type informa el formato pero no el resultado.',
+          },
+        },
+      },
+    },
+
+    // ── L3 ─────────────────────────────────────────────────────────────────
+    {
+      title: '¿Dónde van los datos que envías?',
+      objective:
+        'Localizar en qué parte de la petición HTTP viajan los datos cuando se crea o actualiza un recurso.',
+      theory:
+        'Una petición HTTP también tiene partes: una línea de solicitud (método + ruta), cabeceras y, opcionalmente, un cuerpo. No todas las peticiones tienen cuerpo: un GET simple no lo necesita, pero cuando quieres enviar datos al servidor (crear una reseña, registrarte, subir un archivo) esos datos van en el cuerpo de la petición.\n\nLa ruta identifica el recurso sobre el que actúas, no transporta los datos del recurso. Las cabeceras pueden incluir metadatos sobre el contenido (como su tipo), pero no los datos en sí. El código de estado solo existe en las respuestas, nunca en las peticiones.\n\nEntender dónde colocar los datos es clave para depurar: si tu backend no recibe lo que esperaba, lo primero es revisar si enviaste el cuerpo correctamente y si lo marcaste con el Content-Type adecuado.',
+      concepts: ['cuerpo de la petición', 'método HTTP', 'ruta', 'cabeceras de petición'],
+      tools: [],
+      estimatedTimeMinutes: 8,
+      challenge: {
+        title: '¿Dónde viajan los datos al crear algo?',
+        brief:
+          'Cuando envías datos al servidor para crear un recurso, ¿en qué parte de la petición van?',
+        difficulty: 1,
+        timeLimitMinutes: 3,
+        skills: ['http'],
+        rubric: [
+          {
+            name: 'Comprensión',
+            description: 'Demuestra que entiende el concepto',
+            isCritical: true,
+          },
+        ],
+        concept: {
+          kind: 'quiz',
+          prompt:
+            'Cuando creas algo nuevo en el servidor (por ejemplo, envías una reseña de película), ¿en qué parte de la petición HTTP viajan normalmente esos datos?',
+          runner: 'none',
+          quiz: {
+            options: [
+              { id: 'a', text: 'En la ruta (URL), como parte del path.' },
+              { id: 'b', text: 'En el cuerpo (body) de la petición.' },
+              { id: 'c', text: 'En una cabecera personalizada.' },
+              { id: 'd', text: 'En el código de estado de la petición.' },
+            ],
+            correctIds: ['b'],
+            multiple: false,
+            explanation:
+              'Los datos de creación o actualización viajan en el cuerpo (body) de la petición, habitualmente con Content-Type: application/json. La ruta identifica el endpoint; las cabeceras aportan metadatos; y los códigos de estado solo existen en las respuestas.',
           },
         },
       },

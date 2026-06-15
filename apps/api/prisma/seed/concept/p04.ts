@@ -2,27 +2,28 @@ import { type PhaseSeed } from '../content-types.js';
 
 export const conceptP04: PhaseSeed = {
   code: 'FASE 4',
-  title: 'Autenticación y seguridad básica',
+  title: 'El cliente pide: fetch',
   objective:
-    'Entender cómo sabe el servidor quién eres y por qué nunca hay que fiarse de los datos que llegan.',
-  unlockedSkills: ['auth-sesiones'],
+    'La otra mitad del viaje: el cliente pide datos de forma asíncrona y gestiona carga, éxito y error.',
+  unlockedSkills: ['async', 'fetch-api'],
   projects: [],
   lessons: [
     {
-      title: '¿Quién eres? Autenticación básica',
+      title: '¿Qué es fetch y por qué es asíncrono?',
       objective:
-        'Comprender cómo el servidor identifica al cliente en cada petición tras el inicio de sesión.',
+        'Entender qué hace fetch y por qué necesita ser asíncrono para que la página no se congele.',
       theory:
-        'Cuando inicias sesión, el servidor verifica tu contraseña y, si es correcta, te entrega una credencial: puede ser un token (como un JWT) o el identificador de una sesión guardada en el servidor. A partir de ese momento, no necesitas volver a escribir tu contraseña.\n\nEn cada petición siguiente, el cliente adjunta esa credencial, normalmente en la cabecera HTTP llamada Authorization (por ejemplo: Authorization: Bearer <token>). El servidor la lee, la valida y sabe quién eres sin repetir el proceso de login.\n\nEste mecanismo separa el acto de autenticarse (demostrar quién eres una vez) del acto de estar autorizado (adjuntar la prueba en cada llamada). La credencial tiene una duración limitada para reducir el riesgo si alguien la intercepta.',
-      concepts: ['autenticación', 'token', 'sesión', 'cabecera Authorization', 'login'],
+        'fetch es la función nativa del navegador (y de Node.js moderno) para hacer peticiones HTTP desde el cliente. Recibe una URL y devuelve una Promesa: una promesa de que, en algún momento futuro, llegará la respuesta del servidor.\n\nLa clave está en que esa respuesta no llega de forma instantánea: el navegador tiene que enviar la petición por la red, el servidor tiene que procesarla y devolver datos, y eso puede tardar milisegundos o varios segundos. Si ese tiempo de espera bloqueara el hilo principal de JavaScript, la página entera quedaría congelada: no podrías hacer scroll, no podrías escribir en un campo, no podría animarse nada.\n\nPor eso fetch es asíncrono: el navegador lanza la petición y, sin esperar la respuesta, sigue ejecutando el resto del código. Cuando la respuesta llega, JavaScript lo notifica y ejecuta el código que habías preparado para gestionarla. Esto es lo que hace posible que una aplicación web sea fluida mientras carga datos en segundo plano.\n\nEl flujo completo es: fetch(url) → devuelve una Promesa → cuando resuelve, obtienes un objeto Response → llamas a .json() (también asíncrono) para parsear el cuerpo → y entonces tienes los datos.',
+      concepts: ['fetch', 'Promesa', 'asincronía', 'hilo principal', 'Response'],
       tools: [],
-      estimatedTimeMinutes: 15,
+      estimatedTimeMinutes: 12,
       challenge: {
-        title: 'Identificación tras el login',
-        brief: 'Quiz sobre cómo demuestra el cliente su identidad después de iniciar sesión.',
+        title: '¿Qué hace fetch y por qué es asíncrono?',
+        brief:
+          'Explica qué hace fetch y por qué es ASÍNCRONO: qué problema evita que la página se congele.',
         difficulty: 1,
         timeLimitMinutes: 5,
-        skills: ['auth-sesiones'],
+        skills: ['async', 'fetch-api'],
         rubric: [
           {
             name: 'Comprensión',
@@ -31,40 +32,30 @@ export const conceptP04: PhaseSeed = {
           },
         ],
         concept: {
-          kind: 'quiz',
+          kind: 'short',
           prompt:
-            'Tras iniciar sesión, ¿cómo demuestra el cliente quién es en las siguientes peticiones?',
-          quiz: {
-            options: [
-              { id: 'a', text: 'Vuelve a enviar usuario y contraseña en cada petición' },
-              { id: 'b', text: 'Envía un token o credencial en la cabecera de cada petición' },
-              { id: 'c', text: 'El servidor lo recuerda para siempre sin necesitar nada del cliente' },
-              { id: 'd', text: 'No hace falta nada; el servidor confía en cualquier petición' },
-            ],
-            correctIds: ['b'],
-            multiple: false,
-            explanation:
-              'Tras el login el servidor emite una credencial (token o sesión). El cliente la adjunta en cada petición, normalmente en la cabecera Authorization. Así el servidor puede verificar la identidad sin volver a pedir la contraseña, y la credencial expira con el tiempo para limitar el daño si se filtra.',
-          },
+            'Explica qué hace fetch y por qué es ASÍNCRONO. ¿Qué problema concreto evita que la página se congele mientras espera la respuesta del servidor?',
+          solution:
+            'fetch envía una petición HTTP desde el cliente y devuelve una Promesa con la respuesta futura. Es asíncrono porque la respuesta del servidor no llega de inmediato: si tuviéramos que esperar bloqueados, el hilo principal de JavaScript quedaría congelado y la página no podría responder a ninguna interacción del usuario (scroll, clics, animaciones). Al ser asíncrono, el navegador lanza la petición y sigue ejecutando otro código; cuando llega la respuesta, la Promesa se resuelve y podemos procesarla.',
         },
       },
     },
     {
-      title: 'Nunca te fíes de la entrada',
+      title: 'async/await: esperar sin bloquear',
       objective:
-        'Entender por qué toda entrada del cliente debe validarse y qué ocurre si no se hace.',
+        'Usar async/await para consumir una promesa de forma legible y controlar el orden de ejecución.',
       theory:
-        'El servidor no puede saber de antemano qué envía el cliente: cualquier dato que llegue —un nombre de usuario, un parámetro de búsqueda, un campo de formulario— podría haber sido manipulado. Por eso la regla fundamental es: nunca te fíes de la entrada del cliente; valídala y saneala siempre en el servidor.\n\nSi concatenas directamente la entrada del usuario en una consulta SQL, un atacante puede escribir fragmentos de SQL que alteren la consulta original. Esto se llama inyección SQL y puede exponer o borrar toda la base de datos. La solución es usar consultas parametrizadas o prepared statements, donde los datos van separados del código SQL.\n\nAlgo similar ocurre en HTML: si muestras en la página el texto que el usuario envió sin escaparlo, puede inyectar etiquetas <script> que se ejecutan en el navegador de otras personas. Esto se llama XSS (Cross-Site Scripting). Escapar la salida y usar cabeceras de seguridad adecuadas son las defensas básicas.',
-      concepts: ['validación', 'saneado', 'inyección SQL', 'XSS', 'consulta parametrizada'],
+        'Las Promesas se pueden encadenar con .then(), pero async/await ofrece una sintaxis que parece código síncrono aunque sigue siendo asíncrono por dentro. Una función marcada con async siempre devuelve una Promesa. Dentro de ella, await "pausa" esa función (sin bloquear el hilo) hasta que la Promesa que le sigues resuelve, y entonces te da el valor directamente.\n\nEl orden de ejecución es lo que suelen confundir los principiantes: el código ANTES del primer await se ejecuta de forma inmediata y síncrona. El código DESPUÉS del await se ejecuta solo cuando la Promesa ha resuelto. Por eso si quieres imprimir "pidiendo..." antes de recibir los datos, debes hacerlo antes del await.\n\nEsto permite escribir código asíncrono que se lee de arriba a abajo, sin anidar .then() dentro de .then(). Además, puedes envolver el await en un try/catch para capturar errores de red o de servidor de forma clara.',
+      concepts: ['async', 'await', 'Promesa', 'orden de ejecución', 'try/catch'],
       tools: [],
-      estimatedTimeMinutes: 20,
+      estimatedTimeMinutes: 15,
       challenge: {
-        title: 'Detectar y corregir una inyección SQL',
+        title: 'Orden correcto con async/await',
         brief:
-          'Analiza una función que construye SQL concatenando entrada del usuario, explica el riesgo y reescríbela de forma segura.',
+          'Usa async/await para esperar el resultado de getReviews() e imprime los mensajes en el orden correcto.',
         difficulty: 2,
-        timeLimitMinutes: 10,
-        skills: ['seguridad-web'],
+        timeLimitMinutes: 8,
+        skills: ['async', 'fetch-api'],
         rubric: [
           {
             name: 'Comprensión',
@@ -76,35 +67,77 @@ export const conceptP04: PhaseSeed = {
           kind: 'code',
           runner: 'js',
           prompt:
-            'Esta función construye una consulta SQL concatenando la entrada del usuario (inseguro). Explica el riesgo con un console.log y reescribe la idea usando un parámetro/placeholder (pseudocódigo o con un comentario claro).',
-          starterCode: `function buscar(nombre) {
-  const sql = "SELECT * FROM users WHERE name = '" + nombre + "'";
-  return sql;
+            'Tienes getReviews() que devuelve una promesa. Imprime \'pidiendo...\' ANTES, usa async/await para esperar el resultado, e imprime las reseñas y luego \'listo\'.',
+          starterCode: `function getReviews() {
+  return Promise.resolve([{ titulo: 'Inception' }]);
+}
+// TODO: async/await con los console.log en el orden correcto`,
+          solution: `function getReviews() {
+  return Promise.resolve([{ titulo: 'Inception' }]);
 }
 
-console.log(buscar("Ana"));
-
-// TODO: ¿qué pasa si nombre es  Ana' OR '1'='1  ?
-// Escribe un console.log que muestre el SQL resultante con esa entrada
-// y luego reescribe buscar() usando un placeholder (?) en lugar de concatenar.`,
-          solution: `// RIESGO: inyección SQL
-// Si nombre = "Ana' OR '1'='1", la consulta se convierte en:
-// SELECT * FROM users WHERE name = 'Ana' OR '1'='1'
-// ...que devuelve TODOS los usuarios porque '1'='1' siempre es verdadero.
-
-console.log(buscar("Ana' OR '1'='1"));
-// → SELECT * FROM users WHERE name = 'Ana' OR '1'='1'
-
-// VERSIÓN SEGURA: consulta parametrizada (placeholder ?)
-// El valor viaja separado del SQL; el motor de BD lo trata como dato, nunca como código.
-function buscarSeguro(nombre) {
-  const sql = "SELECT * FROM users WHERE name = ?";
-  // En un ORM real: db.query(sql, [nombre])
-  return { sql, params: [nombre] };
+async function cargar() {
+  console.log('pidiendo...');
+  const reviews = await getReviews();
+  console.log(reviews);
+  console.log('listo');
 }
 
-console.log(buscarSeguro("Ana' OR '1'='1"));
-// → { sql: "SELECT * FROM users WHERE name = ?", params: ["Ana' OR '1'='1"] }`,
+cargar();`,
+        },
+      },
+    },
+    {
+      title: 'Estados de una petición: carga, éxito y error',
+      objective:
+        'Saber qué debe mostrar la interfaz en cada momento del ciclo de vida de una petición fetch.',
+      theory:
+        'Toda petición asíncrona pasa por tres estados bien diferenciados. Primero está el estado de carga (loading): la petición se ha enviado pero aún no hay respuesta. Segundo, el estado de éxito (success): la respuesta llegó con datos válidos. Tercero, el estado de error (error): algo falló, ya sea un error de red, un timeout o una respuesta del servidor con código de error.\n\nDiseñar una interfaz correcta significa pensar en los tres estados. Si ignoras el estado de carga y simplemente muestras la lista vacía mientras esperas, el usuario no sabe si la aplicación está funcionando o rota. Un spinner o un esqueleto de contenido indican actividad y reducen la ansiedad del usuario.\n\nEl estado de error también merece atención: si muestras nada o simplemente la lista vacía cuando algo ha fallado, el usuario no puede saber qué ocurrió ni si debe reintentar. Un mensaje de error claro es siempre mejor que el silencio.',
+      concepts: ['estado de carga', 'spinner', 'estado de éxito', 'estado de error', 'UX'],
+      tools: [],
+      estimatedTimeMinutes: 8,
+      challenge: {
+        title: 'Estado correcto mientras llegan los datos',
+        brief:
+          'Elige qué debería mostrar la interfaz mientras espera la respuesta de una API.',
+        difficulty: 1,
+        timeLimitMinutes: 3,
+        skills: ['async', 'fetch-api'],
+        rubric: [
+          {
+            name: 'Comprensión',
+            description: 'Demuestra que entiende el concepto',
+            isCritical: true,
+          },
+        ],
+        concept: {
+          kind: 'quiz',
+          prompt:
+            'Mientras llega la respuesta de una API, ¿qué debería mostrar la interfaz?',
+          quiz: {
+            options: [
+              {
+                id: 'a',
+                text: 'Un estado de carga o spinner que indique que hay actividad',
+              },
+              {
+                id: 'b',
+                text: 'La lista vacía, como si no hubiera nada todavía',
+              },
+              {
+                id: 'c',
+                text: 'Un mensaje de error, porque aún no hay datos',
+              },
+              {
+                id: 'd',
+                text: 'Nada; esperar en silencio hasta que lleguen los datos',
+              },
+            ],
+            correctIds: ['a'],
+            multiple: false,
+            explanation:
+              'Mientras la petición está en vuelo, la interfaz debe mostrar un indicador de carga (spinner, skeleton, barra de progreso…). Mostrar la lista vacía confunde al usuario, que no sabe si hay datos o no. Mostrar un error es incorrecto porque aún no ha ocurrido ningún fallo. El silencio total hace que la aplicación parezca rota o colgada.',
+          },
         },
       },
     },
