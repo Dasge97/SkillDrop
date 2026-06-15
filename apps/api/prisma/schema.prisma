@@ -90,6 +90,8 @@ model Lesson {
 model Challenge {
   id               String   @id @default(cuid())
   lessonId         String   @unique
+  kind             String   @default("PROJECT") // PROJECT | CONCEPT
+  conceptConfig    String? // JSON (solo CONCEPT): { kind, prompt, starterCode, solution, runner, quiz }
   title            String
   brief            String
   context          String   @default("")
@@ -138,6 +140,7 @@ model Submission {
   figmaUrl    String? // enlace principal de la entrega (Figma, repo, etc.)
   liveUrl     String? // URL de la web/app desplegada
   code        String   @default("") // código pegado (retos de programación)
+  answer      String   @default("") // respuesta de retos CONCEPT (texto corto u opciones JSON)
   screenshots String   @default("[]") // JSON string[] (urls)
   notes       String   @default("")
   version     Int      @default(1)

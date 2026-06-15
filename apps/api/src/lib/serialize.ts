@@ -59,11 +59,32 @@ export function serializeRubric(r: any): RubricDTO | null {
   };
 }
 
+// Construye la config pública de un reto CONCEPT (oculta solución y respuestas correctas).
+function buildConceptPublic(kind: string | undefined, conceptConfig: unknown) {
+  if (kind !== 'CONCEPT' || !conceptConfig) return null;
+  const cfg = parseObject(conceptConfig) as any;
+  return {
+    kind: (cfg.kind ?? 'short') as 'quiz' | 'short' | 'code',
+    prompt: String(cfg.prompt ?? ''),
+    starterCode: String(cfg.starterCode ?? ''),
+    runner: (cfg.runner ?? 'none') as 'none' | 'js' | 'server',
+    sample: cfg.sample ?? null,
+    quiz: cfg.quiz
+      ? {
+          options: (cfg.quiz.options ?? []).map((o: any) => ({ id: String(o.id), text: String(o.text) })),
+          multiple: !!cfg.quiz.multiple,
+        }
+      : null,
+  };
+}
+
 export function serializeChallenge(c: any): ChallengeDTO | null {
   if (!c) return null;
   return {
     id: c.id,
     lessonId: c.lessonId,
+    kind: (c.kind ?? 'PROJECT') as ChallengeDTO['kind'],
+    concept: buildConceptPublic(c.kind, c.conceptConfig),
     title: c.title,
     brief: c.brief,
     context: c.context,
@@ -157,6 +178,7 @@ export function serializeSubmission(s: any): SubmissionDTO {
     figmaUrl: s.figmaUrl ?? null,
     liveUrl: s.liveUrl ?? null,
     code: s.code ?? '',
+    answer: s.answer ?? '',
     screenshots: asStringArray(s.screenshots),
     notes: s.notes,
     version: s.version,

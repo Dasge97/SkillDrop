@@ -7,20 +7,40 @@ export interface RubricCriterionSeed {
   isCritical?: boolean; // por defecto false
 }
 
+// Config de un reto CONCEPT (mínimo código). `solution` y `quiz.correctIds`
+// NO se envían al alumno (los usa la corrección automática / la IA).
+export interface ConceptConfigSeed {
+  kind: 'quiz' | 'short' | 'code';
+  prompt: string;
+  starterCode?: string;
+  solution?: string;
+  runner?: 'none' | 'js' | 'server';
+  // Petición de ejemplo para el runner 'server' (la que recorre los middlewares).
+  sample?: { method?: string; path?: string; headers?: Record<string, string>; query?: Record<string, string>; body?: unknown };
+  quiz?: {
+    options: { id: string; text: string }[];
+    correctIds: string[];
+    multiple?: boolean;
+    explanation?: string;
+  };
+}
+
 export interface ChallengeSeed {
   title: string;
   brief: string;
-  context: string;
-  objective: string;
-  targetUser: string;
-  restrictions: string[];
-  deliverables: string[];
-  checklist: string[];
-  commonMistakes: string[];
+  context?: string;
+  objective?: string;
+  targetUser?: string;
+  restrictions?: string[];
+  deliverables?: string[];
+  checklist?: string[];
+  commonMistakes?: string[];
   difficulty: number; // 1-5
   timeLimitMinutes: number;
   skills: string[]; // slugs de skill
   rubric: RubricCriterionSeed[];
+  // Reto conceptual (mínimo código). Si se define, kind = CONCEPT.
+  concept?: ConceptConfigSeed;
 }
 
 export interface LessonSeed {

@@ -4,6 +4,7 @@ import type { ChallengeDTO, SubmissionDTO } from '@skilldrop/shared';
 import { api } from '@/lib/api';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/Layout';
+import { ConceptChallenge } from '@/components/ConceptChallenge';
 import {
   Badge,
   Button,
@@ -82,6 +83,29 @@ export function ChallengeView() {
   if (isLoading || !data) return <PageLoader />;
 
   const { challenge: c, submissions } = data;
+
+  // Reto conceptual (mínimo código): quiz / respuesta corta / micro-código.
+  if (c.kind === 'CONCEPT' && c.concept) {
+    const last = submissions[0];
+    return (
+      <div>
+        <PageHeader
+          back={{ to: `/lesson/${c.lessonId}`, label: 'Lección' }}
+          eyebrow="Concepto"
+          title={c.title}
+          subtitle={c.brief}
+          actions={
+            last?.evaluation ? (
+              <Link to={`/submission/${last.id}`}>
+                <Button variant="outline" size="sm" icon="review">Último intento</Button>
+              </Link>
+            ) : undefined
+          }
+        />
+        <ConceptChallenge challenge={c} />
+      </div>
+    );
+  }
 
   return (
     <div>

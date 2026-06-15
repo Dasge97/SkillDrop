@@ -6,7 +6,7 @@ import { authenticate } from '../middleware/auth.js';
 import { serializeSubmission } from '../lib/serialize.js';
 import { toJson } from '../lib/json.js';
 import { recalcUserProgress } from '../services/progress.service.js';
-import { evaluateWithAI } from '../services/ai-eval.service.js';
+import { autoEvaluateSubmission } from '../services/concept-eval.service.js';
 
 export const submissionRouter = Router();
 submissionRouter.use(authenticate);
@@ -71,6 +71,7 @@ submissionRouter.post(
         figmaUrl: data.figmaUrl || null,
         liveUrl: data.liveUrl || null,
         code: data.code ?? '',
+        answer: data.answer ?? '',
         screenshots: toJson(data.screenshots ?? []),
         notes: data.notes ?? '',
         version,
@@ -101,16 +102,17 @@ submissionRouter.get(
   }),
 );
 
-// Evaluación con IA de una entrega (la lanza el dueño o un mentor).
+// Auto-evaluación de una entrega (quiz determinista o IA según el reto).
+// La lanza el dueño o un mentor.
 submissionRouter.post(
-  '/:id/ai-evaluation',
+  '/:id/evaluate',
   asyncHandler(async (req, res) => {
     const submission = await prisma.submission.findUnique({ where: { id: req.params.id } });
     if (!submission) throw new HttpError(404, 'Entrega no encontrada');
     const isOwner = submission.userId === req.user!.id;
     const isMentor = req.user!.role === 'MENTOR' || req.user!.role === 'ADMIN';
     if (!isOwner && !isMentor) throw new HttpError(403, 'Sin acceso');
-    const result = await evaluateWithAI(req.params.id);
+    const result = await autoEvaluateSubmission(req.params.id);
     res.status(201).json(result);
   }),
 );

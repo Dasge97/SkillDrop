@@ -30,6 +30,8 @@ export const createSubmissionSchema = z.object({
   liveUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
   // Código pegado directamente (para retos de programación).
   code: z.string().max(20000).optional().default(''),
+  // Respuesta de retos CONCEPT: texto corto u opciones de quiz (JSON array de ids).
+  answer: z.string().max(8000).optional().default(''),
   screenshots: z.array(z.string().url()).max(10).optional().default([]),
   notes: z.string().max(4000).optional().default(''),
   // Si es true se envía directamente a revisión; si no, queda como borrador.

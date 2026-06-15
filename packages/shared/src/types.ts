@@ -55,9 +55,30 @@ export interface RubricDTO {
   criteria: RubricCriterionDTO[];
 }
 
+export type ChallengeKind = 'PROJECT' | 'CONCEPT';
+export type ConceptKind = 'quiz' | 'short' | 'code';
+export type ConceptRunner = 'none' | 'js' | 'server';
+
+export interface QuizOptionDTO {
+  id: string;
+  text: string;
+}
+
+// Config de un reto CONCEPT visible para el alumno (SIN solución ni respuestas correctas).
+export interface ConceptPublicDTO {
+  kind: ConceptKind;
+  prompt: string;
+  starterCode: string;
+  runner: ConceptRunner;
+  sample: Record<string, unknown> | null;
+  quiz: { options: QuizOptionDTO[]; multiple: boolean } | null;
+}
+
 export interface ChallengeDTO {
   id: string;
   lessonId: string;
+  kind: ChallengeKind;
+  concept: ConceptPublicDTO | null;
   title: string;
   brief: string;
   context: string;
@@ -146,6 +167,7 @@ export interface SubmissionDTO {
   figmaUrl: string | null;
   liveUrl: string | null;
   code: string;
+  answer: string;
   screenshots: string[];
   notes: string;
   version: number;

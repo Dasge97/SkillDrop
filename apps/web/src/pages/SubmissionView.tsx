@@ -70,7 +70,7 @@ export function SubmissionView() {
   });
 
   const aiEval = useMutation({
-    mutationFn: () => api.post(`/submissions/${id}/ai-evaluation`),
+    mutationFn: () => api.post(`/submissions/${id}/evaluate`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['submission', id] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });

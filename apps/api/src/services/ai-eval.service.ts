@@ -7,6 +7,7 @@ import { aiEnabled, config } from '../config.js';
 import { prisma } from '../lib/prisma.js';
 import { HttpError } from '../lib/http.js';
 import { asStringArray } from '../lib/serialize.js';
+import { parseObject } from '../lib/json.js';
 import { recordEvaluation } from './evaluation.service.js';
 
 const LEVELS = Object.values(EstimatedLevel);
@@ -72,7 +73,15 @@ export async function evaluateWithAI(submissionId: string) {
     )
     .join('\n');
 
+  const isConcept = ch.kind === 'CONCEPT';
+  const cfg: any = isConcept ? parseObject(ch.conceptConfig) : null;
+
   const deliverable = [
+    isConcept && cfg?.prompt ? `Enunciado del reto: ${cfg.prompt}` : null,
+    isConcept && submission.answer ? `Respuesta del alumno: ${submission.answer}` : null,
+    isConcept && cfg?.solution
+      ? `Solución de referencia (úsala SOLO para corregir; no la reveles literalmente): ${cfg.solution}`
+      : null,
     submission.figmaUrl ? `Enlace de entrega: ${submission.figmaUrl}` : null,
     submission.liveUrl ? `Web desplegada: ${submission.liveUrl}` : null,
     submission.notes ? `Notas del alumno: ${submission.notes}` : null,

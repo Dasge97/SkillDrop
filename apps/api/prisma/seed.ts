@@ -20,6 +20,7 @@ import { phase11 } from './seed/phase-11.js';
 import { phase12 } from './seed/phase-12.js';
 import { dwecCourse } from './seed/dwec/index.js';
 import { dwesCourse } from './seed/dwes/index.js';
+import { conceptCourse } from './seed/concept/index.js';
 
 const prisma = new PrismaClient();
 const J = (v: unknown) => JSON.stringify(v ?? null);
@@ -40,7 +41,7 @@ const figmaCourse: CourseSeed = {
   ],
 };
 
-const allCourses: CourseSeed[] = [figmaCourse, dwecCourse, dwesCourse];
+const allCourses: CourseSeed[] = [figmaCourse, conceptCourse, dwecCourse, dwesCourse];
 
 async function clean() {
   await prisma.evaluationCriterionScore.deleteMany();
@@ -129,15 +130,17 @@ async function seedCourse(course: CourseSeed) {
         const createdChallenge = await prisma.challenge.create({
           data: {
             lessonId: createdLesson.id,
+            kind: ch.concept ? 'CONCEPT' : 'PROJECT',
+            conceptConfig: ch.concept ? J(ch.concept) : null,
             title: ch.title,
             brief: ch.brief,
-            context: ch.context,
-            objective: ch.objective,
-            targetUser: ch.targetUser,
-            restrictions: J(ch.restrictions),
-            deliverables: J(ch.deliverables),
-            checklist: J(ch.checklist),
-            commonMistakes: J(ch.commonMistakes),
+            context: ch.context ?? '',
+            objective: ch.objective ?? '',
+            targetUser: ch.targetUser ?? '',
+            restrictions: J(ch.restrictions ?? []),
+            deliverables: J(ch.deliverables ?? []),
+            checklist: J(ch.checklist ?? []),
+            commonMistakes: J(ch.commonMistakes ?? []),
             difficulty: ch.difficulty,
             timeLimitMinutes: ch.timeLimitMinutes,
             skills: J(ch.skills),
