@@ -9,7 +9,11 @@ import {
   serializeUser,
 } from '../lib/serialize.js';
 import { parseObject, toJson } from '../lib/json.js';
-import { recalcUserProgress } from '../services/progress.service.js';
+import {
+  courseProgressPercent,
+  getCurrentForCourse,
+  recalcUserProgress,
+} from '../services/progress.service.js';
 
 export const meRouter = Router();
 meRouter.use(authenticate);
@@ -66,26 +70,35 @@ meRouter.get(
   '/dashboard',
   asyncHandler(async (req, res) => {
     const userId = req.user!.id;
-    const computed = await recalcUserProgress(userId);
     const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
 
-    const course = await prisma.course.findFirst({
-      orderBy: { createdAt: 'asc' },
-      include: {
-        phases: {
-          orderBy: { order: 'asc' },
-          include: { lessons: { orderBy: { order: 'asc' }, include: { challenge: true } } },
+    // Curso activo del usuario (último abierto) o el primero del catálogo.
+    const course =
+      (user.currentCourseId
+        ? await prisma.course.findUnique({
+            where: { id: user.currentCourseId },
+            include: {
+              phases: {
+                orderBy: { order: 'asc' },
+                include: { lessons: { orderBy: { order: 'asc' }, include: { challenge: true } } },
+              },
+            },
+          })
+        : null) ??
+      (await prisma.course.findFirst({
+        orderBy: { createdAt: 'asc' },
+        include: {
+          phases: {
+            orderBy: { order: 'asc' },
+            include: { lessons: { orderBy: { order: 'asc' }, include: { challenge: true } } },
+          },
         },
-      },
-    });
+      }));
     if (!course) throw new HttpError(404, 'No hay cursos cargados');
 
-    // Progreso global = media de los porcentajes de fase.
-    const percents = course.phases.map((p) => computed.get(p.id)?.progressPercent ?? 0);
-    const progressPercent =
-      percents.length > 0
-        ? Math.round(percents.reduce((a, b) => a + b, 0) / percents.length)
-        : 0;
+    const computed = await recalcUserProgress(userId, course.id);
+    const progressPercent = courseProgressPercent(computed);
+    const { currentPhaseId, currentLessonId } = await getCurrentForCourse(userId, course.id);
 
     // Nota media global (mejor evaluación por reto aprobado).
     const approved = await prisma.submission.findMany({
@@ -105,11 +118,11 @@ meRouter.get(
         ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
         : null;
 
-    // Fase y lección actuales.
-    const currentPhase = course.phases.find((p) => p.id === user.currentPhaseId) ?? null;
+    // Fase y lección actuales (calculadas para el curso activo).
+    const currentPhase = course.phases.find((p) => p.id === currentPhaseId) ?? null;
     let currentLesson: any = null;
     for (const p of course.phases) {
-      const l = p.lessons.find((ls) => ls.id === user.currentLessonId);
+      const l = p.lessons.find((ls) => ls.id === currentLessonId);
       if (l) {
         currentLesson = l;
         break;

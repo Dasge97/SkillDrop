@@ -6,7 +6,6 @@ import { asyncHandler, HttpError } from '../lib/http.js';
 import { authenticate } from '../middleware/auth.js';
 import { serializeUser } from '../lib/serialize.js';
 import { toJson } from '../lib/json.js';
-import { recalcUserProgress } from '../services/progress.service.js';
 
 export const authRouter = Router();
 
@@ -29,12 +28,9 @@ authRouter.post(
       },
     });
 
-    // Inicializa el progreso del usuario (desbloquea la primera fase).
-    await recalcUserProgress(user.id);
-    const fresh = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
-
+    // El progreso se inicializa de forma perezosa al abrir un curso del catálogo.
     const token = signToken({ sub: user.id, role: user.role });
-    res.status(201).json({ token, user: serializeUser(fresh) });
+    res.status(201).json({ token, user: serializeUser(user) });
   }),
 );
 

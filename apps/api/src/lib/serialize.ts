@@ -33,6 +33,7 @@ export function serializeUser(u: any): UserDTO {
     totalXp: u.totalXp,
     streakDays: u.streakDays,
     preferences: parseObject(u.preferences) as UserDTO['preferences'],
+    currentCourseId: u.currentCourseId ?? null,
     currentPhaseId: u.currentPhaseId ?? null,
     currentLessonId: u.currentLessonId ?? null,
     createdAt: iso(u.createdAt),

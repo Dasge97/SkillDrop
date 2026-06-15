@@ -24,6 +24,7 @@ model User {
   timeSpentMinutes Int       @default(0)
   lastActiveAt     DateTime?
   preferences      String    @default("{}") // JSON: { theme }
+  currentCourseId  String?   // último curso activo (catálogo abierto, multi-curso)
   currentPhaseId   String?
   currentLessonId  String?
   createdAt        DateTime  @default(now())

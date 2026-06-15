@@ -1,9 +1,12 @@
-import type { CourseDTO } from '@skilldrop/shared';
+import type { CourseDTO, CourseSummaryDTO } from '@skilldrop/shared';
 import { api } from './api';
 
-// Obtiene el curso principal (el primero del catálogo) con el estado por usuario.
-export async function getMainCourse(): Promise<CourseDTO> {
-  const list = await api.get<Array<{ id: string; slug: string }>>('/courses');
-  if (!list.length) throw new Error('No hay cursos disponibles');
-  return api.get<CourseDTO>(`/courses/${list[0].id}`);
+// Catálogo de cursos con el progreso del usuario en cada uno.
+export function getCourses(): Promise<CourseSummaryDTO[]> {
+  return api.get<CourseSummaryDTO[]>('/courses');
+}
+
+// Curso completo (fases + estado por usuario). Marca el curso como activo.
+export function getCourse(idOrSlug: string): Promise<CourseDTO> {
+  return api.get<CourseDTO>(`/courses/${idOrSlug}`);
 }

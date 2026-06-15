@@ -6,7 +6,8 @@ import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
-import { Roadmap } from './pages/Roadmap';
+import { CoursesCatalog } from './pages/CoursesCatalog';
+import { CourseRoadmap } from './pages/Roadmap';
 import { PhaseView } from './pages/PhaseView';
 import { LessonView } from './pages/LessonView';
 import { ChallengeView } from './pages/ChallengeView';
@@ -64,7 +65,9 @@ export function App() {
       <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
 
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-      <Route path="/roadmap" element={<Protected><Roadmap /></Protected>} />
+      <Route path="/courses" element={<Protected><CoursesCatalog /></Protected>} />
+      <Route path="/course/:id" element={<Protected><CourseRoadmap /></Protected>} />
+      <Route path="/roadmap" element={<Navigate to="/courses" replace />} />
       <Route path="/phase/:id" element={<Protected><PhaseView /></Protected>} />
       <Route path="/lesson/:id" element={<Protected><LessonView /></Protected>} />
       <Route path="/challenge/:id" element={<Protected><ChallengeView /></Protected>} />

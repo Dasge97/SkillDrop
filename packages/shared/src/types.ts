@@ -16,9 +16,23 @@ export interface UserDTO {
   totalXp: number;
   streakDays: number;
   preferences: { theme?: 'light' | 'dark' | 'system' } & Record<string, unknown>;
+  currentCourseId: string | null;
   currentPhaseId: string | null;
   currentLessonId: string | null;
   createdAt: string;
+}
+
+export interface CourseSummaryDTO {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  promise: string;
+  level: string;
+  phaseCount: number;
+  completedPhases: number;
+  progressPercent: number;
 }
 
 export interface AuthResponse {

@@ -53,6 +53,7 @@ submissionRouter.post(
     const data = createSubmissionSchema.parse(req.body);
     const challenge = await prisma.challenge.findUnique({
       where: { id: data.challengeId },
+      include: { lesson: { include: { phase: true } } },
     });
     if (!challenge) throw new HttpError(404, 'Reto no encontrado');
 
@@ -76,7 +77,7 @@ submissionRouter.post(
     });
 
     if (data.submit) await bumpStreak(req.user!.id);
-    await recalcUserProgress(req.user!.id);
+    await recalcUserProgress(req.user!.id, challenge.lesson.phase.courseId);
 
     res.status(201).json(serializeSubmission(submission));
   }),

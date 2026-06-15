@@ -30,7 +30,7 @@ export function PhaseView() {
   return (
     <div>
       <PageHeader
-        back={{ to: '/roadmap', label: 'Roadmap' }}
+        back={{ to: `/course/${phase.courseId}`, label: 'Roadmap del curso' }}
         eyebrow={phase.code}
         title={phase.title}
         subtitle={phase.objective}

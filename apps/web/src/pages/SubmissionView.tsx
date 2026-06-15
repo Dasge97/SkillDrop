@@ -291,9 +291,9 @@ export function SubmissionView() {
               <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
                 ¡Dominio demostrado! Has desbloqueado la siguiente lección.
               </p>
-              <Link to="/roadmap">
+              <Link to="/dashboard">
                 <Button className="w-full" iconRight="arrowRight">
-                  Continuar la fase
+                  Continuar
                 </Button>
               </Link>
             </Card>

@@ -8,7 +8,10 @@ import {
   serializePhase,
   serializeSubmission,
 } from '../lib/serialize.js';
-import { recalcUserProgress } from '../services/progress.service.js';
+import {
+  courseProgressPercent,
+  recalcUserProgress,
+} from '../services/progress.service.js';
 
 export const contentRouter = Router();
 contentRouter.use(authenticate);
@@ -22,15 +25,21 @@ const phaseInclude = {
   },
 };
 
-// Lista de cursos (resumen).
+// Catálogo de cursos con el progreso del usuario en cada uno.
 contentRouter.get(
   '/courses',
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
     const courses = await prisma.course.findMany({
       orderBy: { createdAt: 'asc' },
+      include: { _count: { select: { phases: true } } },
     });
-    res.json(
-      courses.map((c) => ({
+    const result = [];
+    for (const c of courses) {
+      const computed = await recalcUserProgress(req.user!.id, c.id);
+      const completedPhases = [...computed.values()].filter(
+        (x) => x.status === 'COMPLETED',
+      ).length;
+      result.push({
         id: c.id,
         slug: c.slug,
         title: c.title,
@@ -38,8 +47,12 @@ contentRouter.get(
         description: c.description,
         promise: c.promise,
         level: c.level,
-      })),
-    );
+        phaseCount: c._count.phases,
+        completedPhases,
+        progressPercent: courseProgressPercent(computed),
+      });
+    }
+    res.json(result);
   }),
 );
 
@@ -54,7 +67,12 @@ contentRouter.get(
     });
     if (!course) throw new HttpError(404, 'Curso no encontrado');
 
-    const computed = await recalcUserProgress(req.user!.id);
+    const computed = await recalcUserProgress(req.user!.id, course.id);
+    // Marca este curso como el "activo" del usuario (catálogo abierto).
+    await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { currentCourseId: course.id },
+    });
 
     res.json({
       id: course.id,
@@ -87,7 +105,7 @@ contentRouter.get(
       include: phaseInclude,
     });
     if (!phase) throw new HttpError(404, 'Fase no encontrada');
-    const computed = await recalcUserProgress(req.user!.id);
+    const computed = await recalcUserProgress(req.user!.id, phase.courseId);
     res.json(
       serializePhase(
         phase,

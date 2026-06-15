@@ -140,12 +140,15 @@ async function computePhaseStats(
   return { total, approvedCount, average, criticalOk, completed };
 }
 
-// Recalcula el estado de todas las fases del usuario y guarda UserPhaseProgress.
+// Recalcula el estado de las fases de UN curso para el usuario y guarda
+// UserPhaseProgress. La cadena de desbloqueo es independiente por curso.
 // Devuelve un mapa phaseId -> PhaseComputed para usar al serializar.
 export async function recalcUserProgress(
   userId: string,
+  courseId: string,
 ): Promise<Map<string, PhaseComputed>> {
   const phases = await prisma.phase.findMany({
+    where: { courseId },
     orderBy: { order: 'asc' },
     include: { lessons: { include: { challenge: true } } },
   });
@@ -195,20 +198,22 @@ export async function recalcUserProgress(
     prevCompleted = stats.completed;
   }
 
-  // Actualiza la fase/lección "actual" del usuario: primera fase no completada
-  // y disponible, y dentro de ella la primera lección con reto no aprobado.
-  await updateCurrentPointers(userId, phases, computed);
-
   return computed;
 }
 
-async function updateCurrentPointers(
+// Calcula la fase/lección "actual" de un curso para el usuario: la primera fase
+// disponible/en progreso/en revisión y, dentro, la primera lección con reto sin
+// aprobar. No escribe en BD (es de solo lectura).
+export async function getCurrentForCourse(
   userId: string,
-  phases: any[],
-  computed: Map<string, PhaseComputed>,
-) {
-  let currentPhaseId: string | null = null;
-  let currentLessonId: string | null = null;
+  courseId: string,
+): Promise<{ currentPhaseId: string | null; currentLessonId: string | null }> {
+  const phases = await prisma.phase.findMany({
+    where: { courseId },
+    orderBy: { order: 'asc' },
+    include: { lessons: { orderBy: { order: 'asc' }, include: { challenge: true } } },
+  });
+  const computed = await recalcUserProgress(userId, courseId);
 
   for (const phase of phases) {
     const c = computed.get(phase.id);
@@ -218,35 +223,37 @@ async function updateCurrentPointers(
       c.status === PhaseProgressStatus.IN_PROGRESS ||
       c.status === PhaseProgressStatus.IN_REVIEW
     ) {
-      currentPhaseId = phase.id;
       const challengeIds = (phase.lessons ?? [])
         .map((l: any) => l.challenge?.id)
         .filter(Boolean);
       const best = await getApprovedEvaluationsForChallenges(userId, challengeIds);
-      const lessons = (phase.lessons ?? [])
-        .slice()
-        .sort((a: any, b: any) => a.order - b.order);
-      const pending = lessons.find(
-        (l: any) => !l.challenge || !best.has(l.challenge.id),
-      );
-      currentLessonId = (pending ?? lessons[0])?.id ?? null;
-      break;
+      const lessons = (phase.lessons ?? []).slice().sort((a: any, b: any) => a.order - b.order);
+      const pending = lessons.find((l: any) => !l.challenge || !best.has(l.challenge.id));
+      return { currentPhaseId: phase.id, currentLessonId: (pending ?? lessons[0])?.id ?? null };
     }
   }
-
-  // Si todo está completado, apuntamos a la última fase.
-  if (!currentPhaseId && phases.length > 0) {
+  // Todo completado: apuntamos a la última fase.
+  if (phases.length > 0) {
     const last = phases[phases.length - 1];
-    currentPhaseId = last.id;
-    currentLessonId =
-      (last.lessons ?? []).slice().sort((a: any, b: any) => a.order - b.order)[0]
-        ?.id ?? null;
+    const lessons = (last.lessons ?? []).slice().sort((a: any, b: any) => a.order - b.order);
+    return { currentPhaseId: last.id, currentLessonId: lessons[0]?.id ?? null };
   }
+  return { currentPhaseId: null, currentLessonId: null };
+}
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { currentPhaseId, currentLessonId },
+// Devuelve el courseId al que pertenece un reto (challenge -> lesson -> phase).
+export async function courseIdForChallenge(challengeId: string): Promise<string | null> {
+  const challenge = await prisma.challenge.findUnique({
+    where: { id: challengeId },
+    include: { lesson: { include: { phase: true } } },
   });
+  return challenge?.lesson.phase.courseId ?? null;
+}
+
+// Porcentaje de progreso de un curso = media de los porcentajes de sus fases.
+export function courseProgressPercent(computed: Map<string, PhaseComputed>): number {
+  const vals = [...computed.values()].map((c) => c.progressPercent);
+  return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
 }
 
 // Actualiza progreso de habilidades y XP tras una evaluación.

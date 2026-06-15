@@ -11,6 +11,7 @@ import { serializeSubmission } from '../lib/serialize.js';
 import { toJson } from '../lib/json.js';
 import {
   applyEvaluationEffects,
+  courseIdForChallenge,
   evaluationStatusFromScore,
   recalcUserProgress,
   recalcXp,
@@ -109,10 +110,11 @@ mentorRouter.post(
       data: { status: submissionStatus },
     });
 
-    // Efectos: skills, XP y recálculo del bloqueo de fases para el alumno.
+    // Efectos: skills, XP y recálculo del bloqueo de fases (del curso) para el alumno.
     await applyEvaluationEffects(submission.userId, submission.challengeId);
     await recalcXp(submission.userId);
-    await recalcUserProgress(submission.userId);
+    const courseId = await courseIdForChallenge(submission.challengeId);
+    if (courseId) await recalcUserProgress(submission.userId, courseId);
 
     const full = await prisma.submission.findUnique({
       where: { id: submission.id },

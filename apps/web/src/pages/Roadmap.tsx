@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { PhaseDTO, PhaseProgressStatus } from '@skilldrop/shared';
-import { getMainCourse } from '@/lib/queries';
+import { getCourse } from '@/lib/queries';
 import { Icon } from '@/components/icons';
 import {
   cx,
@@ -98,10 +98,12 @@ function PhaseCard({ phase }: { phase: PhaseDTO }) {
   );
 }
 
-export function Roadmap() {
+export function CourseRoadmap() {
+  const { id } = useParams<{ id: string }>();
   const { data: course, isLoading } = useQuery({
-    queryKey: ['course'],
-    queryFn: getMainCourse,
+    queryKey: ['course', id],
+    queryFn: () => getCourse(id!),
+    enabled: !!id,
   });
 
   if (isLoading || !course) return <PageLoader />;
@@ -109,6 +111,7 @@ export function Roadmap() {
   return (
     <div>
       <PageHeader
+        back={{ to: '/courses', label: 'Todos los cursos' }}
         eyebrow={course.title}
         title="Roadmap del curso"
         subtitle="Las fases se desbloquean por dominio. Completa los retos de una fase para abrir la siguiente."

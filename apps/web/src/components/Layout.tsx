@@ -55,7 +55,7 @@ interface NavItem {
 }
 const NAV: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: 'home', group: ['/dashboard'] },
-  { to: '/roadmap', label: 'Roadmap', icon: 'map', group: ['/roadmap', '/phase', '/lesson', '/challenge', '/submit', '/submission'] },
+  { to: '/courses', label: 'Cursos', icon: 'map', group: ['/courses', '/course', '/roadmap', '/phase', '/lesson', '/challenge', '/submit', '/submission'] },
   { to: '/progress', label: 'Progreso', icon: 'progress', group: ['/progress'] },
   { to: '/resources', label: 'Recursos', icon: 'book', group: ['/resources'] },
   { to: '/mentor', label: 'Revisión', icon: 'review', roles: ['MENTOR'], group: ['/mentor'] },

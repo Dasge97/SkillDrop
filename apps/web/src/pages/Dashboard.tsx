@@ -39,7 +39,7 @@ export function Dashboard() {
 
   const firstName = (user?.name ?? '').split(' ')[0];
   const ev = data.lastEvaluation;
-  const goContinue = () => navigate(data.nextChallenge ? `/challenge/${data.nextChallenge.id}` : '/roadmap');
+  const goContinue = () => navigate(data.nextChallenge ? `/challenge/${data.nextChallenge.id}` : `/course/${data.course.id}`);
 
   return (
     <div>
