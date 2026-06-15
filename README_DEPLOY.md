@@ -49,6 +49,8 @@ servicio público** (`web`). Pensado para CodeHive (Traefik → `skilldrop.code-
 | `VITE_API_URL` | web (build) | `/api` | Base de la API (relativa). No usar `localhost`. |
 | `WEB_PORT` | web | `8080` | Puerto loopback del host (Traefik apunta aquí). |
 | `DATABASE_URL` | api | `file:/data/dev.db` | Conexión Prisma (SQLite en el volumen). |
+| `OPENAI_API_KEY` | api | _(vacío)_ | Clave de OpenAI para la evaluación con IA. Si se deja vacía, el modo "Evaluar con IA" queda deshabilitado. |
+| `OPENAI_MODEL` | api | `gpt-4o` | Modelo de OpenAI usado para evaluar. |
 
 > `VITE_API_URL` se embebe en tiempo de **build** del frontend; si lo cambias, reconstruye `web`.
 

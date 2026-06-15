@@ -20,6 +20,9 @@ services:
       JWT_EXPIRES_IN: "7d"
       # Mismo origen detrás del proxy; configurable para el dominio público.
       WEB_ORIGIN: "${WEB_ORIGIN:-https://skilldrop.code-hive.space}"
+      # Evaluación con IA (OpenAI). Si está vacío, el modo IA queda deshabilitado.
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENAI_MODEL: "${OPENAI_MODEL:-gpt-4o}"
       NODE_ENV: "production"
     volumes:
       - skilldrop-data:/data
