@@ -134,7 +134,7 @@ export function serializeEvaluation(e: any): EvaluationDTO | null {
     optionalImprovements: asStringArray(e.optionalImprovements),
     status: e.status as EvaluationStatus,
     estimatedLevel: e.estimatedLevel as EstimatedLevel,
-    mentorName: e.mentor?.name ?? 'Mentor',
+    mentorName: e.mentor?.name ?? 'SkillDrop IA',
     criteriaScores: (e.criteriaScores ?? []).map((s: any) => ({
       id: s.id,
       criterionId: s.criterionId,
@@ -155,6 +155,8 @@ export function serializeSubmission(s: any): SubmissionDTO {
     challengeTitle: s.challenge?.title,
     studentName: s.user?.name,
     figmaUrl: s.figmaUrl ?? null,
+    liveUrl: s.liveUrl ?? null,
+    code: s.code ?? '',
     screenshots: asStringArray(s.screenshots),
     notes: s.notes,
     version: s.version,

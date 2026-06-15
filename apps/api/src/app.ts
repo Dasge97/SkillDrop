@@ -1,6 +1,6 @@
 import cors from 'cors';
 import express from 'express';
-import { config } from './config.js';
+import { aiEnabled, config } from './config.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { authRouter } from './routes/auth.routes.js';
@@ -17,6 +17,7 @@ export function createApp() {
   app.use(express.json({ limit: '2mb' }));
 
   app.get('/health', (_req, res) => res.json({ ok: true }));
+  app.get('/config', (_req, res) => res.json({ aiEvaluation: aiEnabled() }));
 
   app.use('/auth', authRouter);
   app.use('/', contentRouter); // /courses, /phases, /lessons, /challenges

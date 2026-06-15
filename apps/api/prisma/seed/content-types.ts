@@ -43,6 +43,16 @@ export interface PhaseSeed {
   lessons: LessonSeed[];
 }
 
+export interface CourseSeed {
+  slug: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  promise: string;
+  level: string;
+  phases: PhaseSeed[];
+}
+
 // ---- Presets de criterios de rúbrica reutilizables (sección 6.5 del spec) ----
 // Devuelven objetos nuevos para poder ajustarlos por reto.
 

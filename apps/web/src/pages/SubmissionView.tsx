@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { EvaluationDTO, SubmissionDTO } from '@skilldrop/shared';
 import { ESTIMATED_LEVEL_LABEL } from '@skilldrop/shared';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/Layout';
 import {
@@ -55,16 +56,32 @@ function CriterionRow({ cr }: { cr: EvaluationDTO['criteriaScores'][number] }) {
 export function SubmissionView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { user } = useAuth();
 
   const { data: s, isLoading } = useQuery({
     queryKey: ['submission', id],
     queryFn: () => api.get<SubmissionDTO>(`/submissions/${id}`),
     enabled: !!id,
   });
+  const { data: cfg } = useQuery({
+    queryKey: ['config'],
+    queryFn: () => api.get<{ aiEvaluation: boolean }>('/config'),
+  });
+
+  const aiEval = useMutation({
+    mutationFn: () => api.post(`/submissions/${id}/ai-evaluation`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['submission', id] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
 
   if (isLoading || !s) return <PageLoader />;
 
   const ev = s.evaluation;
+  const isOwner = user?.id === s.userId;
+  const canAi = cfg?.aiEvaluation && isOwner;
 
   /* ---- Estado "en revisión" (sin evaluación) ---- */
   if (!ev) {
@@ -83,11 +100,28 @@ export function SubmissionView() {
             className="w-40 h-40 object-contain mb-6"
           />
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-4">
-            Tu entrega está en la cola del mentor
+            Tu entrega está esperando evaluación
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm">
-            Normalmente recibirás tu evaluación con rúbrica en menos de 24 h. Te avisaremos en cuanto esté lista.
+            {canAi
+              ? 'Pide una evaluación instantánea a la IA con rúbrica y feedback, o espera a tu mentor.'
+              : 'Recibirás tu evaluación con rúbrica de tu mentor. Te avisaremos en cuanto esté lista.'}
           </p>
+          {canAi && (
+            <Button
+              className="mt-6"
+              icon="sparkles"
+              loading={aiEval.isPending}
+              onClick={() => aiEval.mutate()}
+            >
+              {aiEval.isPending ? 'Evaluando…' : 'Evaluar con IA'}
+            </Button>
+          )}
+          {aiEval.isError && (
+            <p className="text-sm text-red-600 dark:text-red-400 mt-3">
+              {aiEval.error instanceof ApiError ? aiEval.error.message : 'No se pudo evaluar con IA.'}
+            </p>
+          )}
           <div className="mt-6 flex gap-3">
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
               Ir al dashboard
@@ -132,7 +166,25 @@ export function SubmissionView() {
                 {s.figmaUrl}
               </a>
             ) : (
-              <p className="text-sm text-slate-500 dark:text-slate-400">Sin enlace de Figma.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Sin enlace de entrega.</p>
+            )}
+
+            {s.liveUrl && (
+              <a
+                href={s.liveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 flex items-center gap-2 text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline break-all"
+              >
+                <Icon name="bolt" className="w-4 h-4 shrink-0" />
+                {s.liveUrl}
+              </a>
+            )}
+
+            {s.code && (
+              <pre className="mt-4 max-h-72 overflow-auto rounded-lg bg-slate-900 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3.5 text-xs text-slate-100 font-mono">
+                <code>{s.code}</code>
+              </pre>
             )}
 
             {s.screenshots.length > 0 && (

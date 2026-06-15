@@ -17,13 +17,14 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@skilldrop/shared": "*",
     "@prisma/client": "^5.22.0",
+    "@skilldrop/shared": "*",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
+    "openai": "^4.104.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

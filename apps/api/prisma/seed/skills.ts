@@ -52,4 +52,29 @@ export const skills: SkillSeed[] = [
   // Carrera
   { slug: 'portfolio', name: 'Portfolio', category: 'Carrera', description: 'Case studies y portfolio profesional.' },
   { slug: 'freelancing', name: 'Freelancing', category: 'Carrera', description: 'Propuestas, briefs y clientes.' },
+
+  // ---- Desarrollo Web: Cliente (DWEC) ----
+  { slug: 'js-fundamentos', name: 'Fundamentos JS', category: 'JavaScript', description: 'Sintaxis, tipos, operadores y control de flujo.' },
+  { slug: 'js-datos', name: 'Datos en JS', category: 'JavaScript', description: 'Arrays, objetos y transformación de colecciones.' },
+  { slug: 'js-poo', name: 'POO en JS', category: 'JavaScript', description: 'Objetos, clases y módulos.' },
+  { slug: 'dom', name: 'DOM', category: 'JavaScript', description: 'Manipular el árbol del documento.' },
+  { slug: 'eventos', name: 'Eventos', category: 'JavaScript', description: 'Manejo de eventos e interacción.' },
+  { slug: 'async', name: 'Asíncrono', category: 'JavaScript', description: 'Promesas, async/await y fetch.' },
+  { slug: 'fetch-api', name: 'Consumo de APIs', category: 'JavaScript', description: 'Fetch, JSON y comunicación con el servidor.' },
+  { slug: 'vue', name: 'Vue', category: 'Frontend', description: 'Componentes, reactividad y router en Vue.' },
+  { slug: 'spa', name: 'SPA', category: 'Frontend', description: 'Aplicaciones de una sola página.' },
+  { slug: 'accesibilidad-web', name: 'Accesibilidad web', category: 'Frontend', description: 'Accesibilidad y buenas prácticas de UI web.' },
+  { slug: 'testing-front', name: 'Testing front', category: 'Frontend', description: 'Pruebas en el cliente.' },
+
+  // ---- Desarrollo Web: Servidor (DWES) ----
+  { slug: 'http', name: 'HTTP', category: 'Servidor', description: 'Protocolo, request/response, cliente vs servidor.' },
+  { slug: 'php', name: 'PHP', category: 'Servidor', description: 'Sintaxis y lógica del lado servidor en PHP.' },
+  { slug: 'php-marcas', name: 'PHP en HTML', category: 'Servidor', description: 'Código embebido en lenguajes de marcas (vistas dinámicas).' },
+  { slug: 'mvc', name: 'MVC', category: 'Servidor', description: 'Separar presentación de lógica de negocio.' },
+  { slug: 'sql', name: 'SQL', category: 'Datos', description: 'Consultas y modelado relacional.' },
+  { slug: 'mysql-pdo', name: 'MySQL + PDO', category: 'Datos', description: 'Acceso a datos con PDO y seguridad.' },
+  { slug: 'auth-sesiones', name: 'Auth y sesiones', category: 'Servidor', description: 'Login, sesiones, roles y hashing.' },
+  { slug: 'api-rest', name: 'API REST', category: 'Servidor', description: 'Diseñar servicios web REST.' },
+  { slug: 'seguridad-web', name: 'Seguridad web', category: 'Servidor', description: 'Inyección, XSS, CORS y validación.' },
+  { slug: 'despliegue', name: 'Despliegue', category: 'Servidor', description: 'Puesta en producción y variables de entorno.' },
 ];

@@ -27,6 +27,8 @@ export function SubmitView() {
   });
 
   const [figmaUrl, setFigmaUrl] = useState('');
+  const [liveUrl, setLiveUrl] = useState('');
+  const [code, setCode] = useState('');
   const [shots, setShots] = useState<string[]>(['']);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +38,8 @@ export function SubmitView() {
       api.post<SubmissionDTO>('/submissions', {
         challengeId: id,
         figmaUrl: figmaUrl.trim() || undefined,
+        liveUrl: liveUrl.trim() || undefined,
+        code: code.trim() || undefined,
         screenshots: shots.map((s) => s.trim()).filter(Boolean),
         notes,
         submit: true,
@@ -54,8 +58,8 @@ export function SubmitView() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!figmaUrl.trim() && shots.every((s) => !s.trim())) {
-      setError('Añade al menos un enlace de Figma o una captura.');
+    if (!figmaUrl.trim() && !liveUrl.trim() && !code.trim() && shots.every((s) => !s.trim())) {
+      setError('Añade al menos un enlace, código o una captura.');
       return;
     }
     mutation.mutate();
@@ -92,19 +96,42 @@ export function SubmitView() {
 
           <form onSubmit={onSubmit} className="space-y-5">
             <Field
-              label="Enlace de Figma"
-              hint="Asegúrate de que el archivo tenga permiso de visualización."
+              label="Enlace de la entrega"
+              hint="Figma, repositorio Git, etc. Asegúrate de que tenga permiso de visualización."
             >
               <div className="relative">
                 <Icon name="link" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <Input
                   type="url"
                   className="pl-9"
-                  placeholder="https://figma.com/file/…"
+                  placeholder="https://github.com/… o https://figma.com/…"
                   value={figmaUrl}
                   onChange={(e) => setFigmaUrl(e.target.value)}
                 />
               </div>
+            </Field>
+
+            <Field label="Web / app desplegada (opcional)" hint="Si tu reto incluye una demo en línea.">
+              <div className="relative">
+                <Icon name="bolt" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  type="url"
+                  className="pl-9"
+                  placeholder="https://mi-app.ejemplo.com"
+                  value={liveUrl}
+                  onChange={(e) => setLiveUrl(e.target.value)}
+                />
+              </div>
+            </Field>
+
+            <Field label="Código (opcional)" hint="Pega aquí tu código para que el mentor o la IA lo evalúen.">
+              <Textarea
+                rows={8}
+                className="font-mono text-xs"
+                placeholder={'<?php\n// tu código…'}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
             </Field>
 
             <div>

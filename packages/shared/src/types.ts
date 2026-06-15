@@ -144,6 +144,8 @@ export interface SubmissionDTO {
   challengeTitle?: string;
   studentName?: string;
   figmaUrl: string | null;
+  liveUrl: string | null;
+  code: string;
   screenshots: string[];
   notes: string;
   version: number;

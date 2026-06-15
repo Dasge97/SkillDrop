@@ -362,7 +362,23 @@ export function MentorReview() {
                 Abrir archivo de Figma
               </a>
             ) : (
-              <p className="text-sm text-slate-400">Sin enlace de Figma.</p>
+              <p className="text-sm text-slate-400">Sin enlace de entrega.</p>
+            )}
+            {submission.liveUrl && (
+              <a
+                href={submission.liveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 flex items-center gap-2 text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline break-all"
+              >
+                <Icon name="bolt" className="w-4 h-4" />
+                Ver desplegado
+              </a>
+            )}
+            {submission.code && (
+              <pre className="mt-3 max-h-60 overflow-auto rounded-lg bg-slate-900 dark:bg-slate-950 p-3 text-[11px] text-slate-100 font-mono">
+                <code>{submission.code}</code>
+              </pre>
             )}
             {submission.screenshots.length > 0 && (
               <div className="grid grid-cols-3 gap-2 mt-3">

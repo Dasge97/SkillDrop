@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-import type { PhaseSeed } from './seed/content-types.js';
+import type { CourseSeed } from './seed/content-types.js';
 import { skills } from './seed/skills.js';
 import { resources } from './seed/resources.js';
 import { demoUsers } from './seed/users.js';
@@ -18,17 +18,13 @@ import { phase09 } from './seed/phase-09.js';
 import { phase10 } from './seed/phase-10.js';
 import { phase11 } from './seed/phase-11.js';
 import { phase12 } from './seed/phase-12.js';
+import { dwecCourse } from './seed/dwec/index.js';
+import { dwesCourse } from './seed/dwes/index.js';
 
 const prisma = new PrismaClient();
-
-const phases: PhaseSeed[] = [
-  phase00, phase01, phase02, phase03, phase04, phase05, phase06,
-  phase07, phase08, phase09, phase10, phase11, phase12,
-];
-
 const J = (v: unknown) => JSON.stringify(v ?? null);
 
-const course = {
+const figmaCourse: CourseSeed = {
   slug: 'figma-product-design-bootcamp',
   title: 'Figma Product Design Bootcamp: de cero a diseñador UI/UX profesional',
   subtitle:
@@ -38,10 +34,15 @@ const course = {
   promise:
     'Al terminar, no solo sabrás usar Figma: sabrás diseñar productos digitales claros, escalables y defendibles profesionalmente.',
   level: 'De cero a profesional',
+  phases: [
+    phase00, phase01, phase02, phase03, phase04, phase05, phase06,
+    phase07, phase08, phase09, phase10, phase11, phase12,
+  ],
 };
 
+const allCourses: CourseSeed[] = [figmaCourse, dwecCourse, dwesCourse];
+
 async function clean() {
-  // Borra contenido y progreso (cascada se encarga de los hijos).
   await prisma.evaluationCriterionScore.deleteMany();
   await prisma.evaluation.deleteMany();
   await prisma.submission.deleteMany();
@@ -55,13 +56,7 @@ async function clean() {
 async function seedSkills() {
   for (const [i, s] of skills.entries()) {
     await prisma.skill.create({
-      data: {
-        slug: s.slug,
-        name: s.name,
-        category: s.category,
-        description: s.description,
-        order: i,
-      },
+      data: { slug: s.slug, name: s.name, category: s.category, description: s.description, order: i },
     });
   }
   console.log(`  ✓ ${skills.length} skills`);
@@ -84,7 +79,7 @@ async function seedResources() {
   console.log(`  ✓ ${resources.length} recursos`);
 }
 
-async function seedCourse() {
+async function seedCourse(course: CourseSeed) {
   const createdCourse = await prisma.course.create({
     data: {
       slug: course.slug,
@@ -99,7 +94,7 @@ async function seedCourse() {
   let lessonCount = 0;
   let challengeCount = 0;
 
-  for (const [pIndex, phase] of phases.entries()) {
+  for (const [pIndex, phase] of course.phases.entries()) {
     const createdPhase = await prisma.phase.create({
       data: {
         courseId: createdCourse.id,
@@ -150,10 +145,7 @@ async function seedCourse() {
         });
         challengeCount++;
 
-        // Rúbrica + criterios
-        const rubric = await prisma.rubric.create({
-          data: { challengeId: createdChallenge.id },
-        });
+        const rubric = await prisma.rubric.create({ data: { challengeId: createdChallenge.id } });
         for (const [cIndex, crit] of ch.rubric.entries()) {
           await prisma.rubricCriterion.create({
             data: {
@@ -172,7 +164,7 @@ async function seedCourse() {
   }
 
   console.log(
-    `  ✓ Curso "${course.title}" con ${phases.length} fases, ${lessonCount} lecciones, ${challengeCount} retos`,
+    `  ✓ "${course.title}" — ${course.phases.length} fases, ${lessonCount} lecciones, ${challengeCount} retos`,
   );
 }
 
@@ -181,13 +173,7 @@ async function seedUsers() {
     const passwordHash = await bcrypt.hash(u.password, 10);
     await prisma.user.upsert({
       where: { email: u.email },
-      create: {
-        name: u.name,
-        email: u.email,
-        passwordHash,
-        role: u.role,
-        preferences: J({ theme: 'system' }),
-      },
+      create: { name: u.name, email: u.email, passwordHash, role: u.role, preferences: J({ theme: 'system' }) },
       update: { name: u.name, passwordHash, role: u.role },
     });
   }
@@ -199,11 +185,12 @@ async function main() {
   await clean();
   await seedSkills();
   await seedResources();
-  await seedCourse();
+  for (const course of allCourses) await seedCourse(course);
   await seedUsers();
   console.log('✅ Seed completado.');
   console.log('   Alumno:  student@skilldrop.dev / skilldrop');
   console.log('   Mentor:  mentor@skilldrop.dev / skilldrop');
+  console.log('   Admin:   admin@skilldrop.dev / skilldrop');
 }
 
 main()

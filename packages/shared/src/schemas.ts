@@ -24,12 +24,12 @@ export type LoginInput = z.infer<typeof loginSchema>;
 
 export const createSubmissionSchema = z.object({
   challengeId: z.string().min(1),
-  figmaUrl: z
-    .string()
-    .url('Debe ser una URL válida')
-    .refine((u) => /figma\.com/i.test(u), 'Debe ser un enlace de Figma')
-    .optional()
-    .or(z.literal('')),
+  // Enlace principal de la entrega: Figma, repositorio Git, etc. (cualquier URL).
+  figmaUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
+  // URL de la web/app desplegada (opcional).
+  liveUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
+  // Código pegado directamente (para retos de programación).
+  code: z.string().max(20000).optional().default(''),
   screenshots: z.array(z.string().url()).max(10).optional().default([]),
   notes: z.string().max(4000).optional().default(''),
   // Si es true se envía directamente a revisión; si no, queda como borrador.

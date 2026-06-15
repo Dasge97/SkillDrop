@@ -135,7 +135,9 @@ model Submission {
   id          String   @id @default(cuid())
   userId      String
   challengeId String
-  figmaUrl    String?
+  figmaUrl    String? // enlace principal de la entrega (Figma, repo, etc.)
+  liveUrl     String? // URL de la web/app desplegada
+  code        String   @default("") // código pegado (retos de programación)
   screenshots String   @default("[]") // JSON string[] (urls)
   notes       String   @default("")
   version     Int      @default(1)
