@@ -7,6 +7,7 @@ import { runCode, type RunResult } from '@/lib/runner';
 import { Icon } from './icons';
 import { Button, Card, cx, SectionTitle } from './ui';
 import { RequestVisualizer } from './RequestVisualizer';
+import { RichText } from './RichText';
 
 export function ConceptChallenge({ challenge }: { challenge: ChallengeDTO }) {
   const concept = challenge.concept!;
@@ -66,9 +67,11 @@ export function ConceptChallenge({ challenge }: { challenge: ChallengeDTO }) {
       <div className="space-y-5">
         <Card className="p-6">
           <SectionTitle icon="idea" title="Reto" />
-          <p className="text-[15px] leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-line">
-            {concept.prompt}
-          </p>
+          <RichText
+            text={concept.prompt}
+            detectCode
+            className="space-y-3 text-[15px] leading-relaxed text-slate-700 dark:text-slate-200"
+          />
         </Card>
 
         {/* QUIZ */}

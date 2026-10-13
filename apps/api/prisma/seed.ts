@@ -20,6 +20,7 @@ import { phase11 } from './seed/phase-11.js';
 import { phase12 } from './seed/phase-12.js';
 import { dwecCourse } from './seed/dwec/index.js';
 import { dwesCourse } from './seed/dwes/index.js';
+import { dwecPasoCourse } from './seed/dwec-paso/index.js';
 import { conceptCourse } from './seed/concept/index.js';
 
 const prisma = new PrismaClient();
@@ -41,7 +42,7 @@ const figmaCourse: CourseSeed = {
   ],
 };
 
-const allCourses: CourseSeed[] = [figmaCourse, conceptCourse, dwecCourse, dwesCourse];
+const allCourses: CourseSeed[] = [figmaCourse, conceptCourse, dwecCourse, dwesCourse, dwecPasoCourse];
 
 async function clean() {
   await prisma.evaluationCriterionScore.deleteMany();

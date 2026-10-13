@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { LessonDTO } from '@skilldrop/shared';
 import { api } from '@/lib/api';
 import { Icon } from '@/components/icons';
+import { InlineCode, TheoryBlock } from '@/components/RichText';
 import { PageHeader } from '@/components/Layout';
 import {
   Badge,
@@ -82,9 +83,9 @@ export function LessonView() {
     <div>
       <PageHeader
         back={{ to: `/phase/${lesson.phaseId}`, label: 'Volver a la fase' }}
-        eyebrow={`Lección · Fase ${lesson.phaseId}`}
+        eyebrow="Lección"
         title={lesson.title}
-        subtitle={lesson.objective}
+        subtitle={<InlineCode text={lesson.objective} />}
         actions={
           <div className="flex items-center gap-3">
             {lesson.challenge && (
@@ -115,7 +116,7 @@ export function LessonView() {
             </div>
 
             <div className="space-y-4 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">
-              {paragraphs.map((para, i) => <p key={i}>{para}</p>)}
+              {paragraphs.map((para, i) => <TheoryBlock key={i} text={para} />)}
             </div>
 
             {lesson.example && (
@@ -124,9 +125,15 @@ export function LessonView() {
                   <Icon name="sparkles" className="w-3.5 h-3.5" />
                   Ejemplo
                 </p>
-                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {lesson.example}
-                </p>
+                {lesson.example.includes('\n') ? (
+                  <pre className="text-[13px] font-mono whitespace-pre-wrap text-slate-700 dark:text-slate-200 overflow-x-auto">
+                    {lesson.example.replace(/^```\w*\n?|\n?```$/g, '')}
+                  </pre>
+                ) : (
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <InlineCode text={lesson.example} />
+                  </p>
+                )}
               </div>
             )}
           </Card>
@@ -153,7 +160,7 @@ export function LessonView() {
           {lesson.tools.length > 0 && (
             <Card className="p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
-                Herramientas de Figma
+                Herramientas
               </p>
               <div className="flex flex-wrap gap-2">
                 {lesson.tools.map((t) => (

@@ -21,6 +21,7 @@ import { phase12 } from './seed/phase-12.js';
 import { conceptCourse } from './seed/concept/index.js';
 import { dwecCourse } from './seed/dwec/index.js';
 import { dwesCourse } from './seed/dwes/index.js';
+import { dwecPasoCourse } from './seed/dwec-paso/index.js';
 
 const prisma = new PrismaClient();
 const J = (v: unknown) => JSON.stringify(v ?? null);
@@ -41,7 +42,7 @@ const figmaCourse: CourseSeed = {
   ],
 };
 
-const allCourses: CourseSeed[] = [figmaCourse, conceptCourse, dwecCourse, dwesCourse];
+const allCourses: CourseSeed[] = [figmaCourse, conceptCourse, dwecCourse, dwesCourse, dwecPasoCourse];
 
 async function upsertSkills() {
   for (const [i, s] of skills.entries()) {
