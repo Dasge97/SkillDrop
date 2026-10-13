@@ -287,7 +287,7 @@ export function SubmissionView() {
             </div>
             <p className="text-sm text-slate-400 mb-3">nota total / 10</p>
             <EvalStatusBadge status={ev.status} />
-            <p className="text-sm text-slate-600 dark:text-slate-300 mt-4 leading-relaxed text-left">
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-4 leading-relaxed text-left whitespace-pre-line">
               {ev.mentorFeedback}
             </p>
           </Card>

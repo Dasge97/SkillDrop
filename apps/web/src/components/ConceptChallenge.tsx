@@ -160,7 +160,9 @@ export function ConceptChallenge({ challenge }: { challenge: ChallengeDTO }) {
           <span className="text-xs text-slate-400">
             {concept.kind === 'quiz'
               ? 'Corrección al instante.'
-              : 'Te evalúa la IA con feedback inmediato.'}
+              : concept.kind === 'code' && concept.runner === 'js'
+                ? 'Se ejecuta tu código y se compara lo que imprime con lo esperado.'
+                : 'Te evalúa la IA con feedback inmediato.'}
           </span>
         </div>
       </div>
