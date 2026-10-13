@@ -78,18 +78,24 @@ async function gradeCode(submissionId: string) {
 
   const criteria = submission.challenge.rubric?.criteria ?? [];
   if (criteria.length === 0) throw new HttpError(400, 'El reto no tiene rúbrica');
-  const score = grade.correct ? 10 : 3;
+  const score = grade.match === 'exact' ? 10 : grade.match === 'loose' ? 9 : 3;
+  const firstDiff = grade.expected.findIndex((l, i) => grade.got[i] !== l);
 
   let feedback: string;
   const required: string[] = [];
-  if (grade.correct) {
+  const optional: string[] = [];
+  if (grade.match === 'exact') {
     feedback = '¡Correcto! Tu código imprime exactamente lo esperado.';
+  } else if (grade.match === 'loose') {
+    feedback =
+      'Correcto: tu código hace lo que se pide. Pero fíjate en el texto: solo cambian mayúsculas o espacios.\n\n' +
+      `En la línea ${firstDiff + 1} se esperaba "${grade.expected[firstDiff]}" y has puesto "${grade.got[firstDiff]}".`;
+    optional.push('En programación la salida exacta importa: copia el texto tal como lo pide el enunciado.');
   } else {
     const parts: string[] = ['Tu código no imprime lo esperado.'];
     if (grade.error) parts.push(`Al ejecutarlo da este error:\n  ${grade.error}`);
     parts.push(`Se esperaba:\n${showLines(grade.expected)}`);
     parts.push(`Tu código imprime:\n${showLines(grade.got)}`);
-    const firstDiff = grade.expected.findIndex((l, i) => grade.got[i] !== l);
     if (firstDiff >= 0) {
       parts.push(
         `La primera diferencia está en la línea ${firstDiff + 1}: se esperaba "${grade.expected[firstDiff]}" ` +
@@ -107,11 +113,16 @@ async function gradeCode(submissionId: string) {
     criteria: criteria.map((c) => ({
       criterionId: c.id,
       score,
-      comment: grade.correct ? 'La salida coincide con la esperada.' : 'La salida no coincide con la esperada.',
+      comment:
+        grade.match === 'exact'
+          ? 'La salida coincide con la esperada.'
+          : grade.match === 'loose'
+            ? 'La salida coincide salvo mayúsculas o espacios.'
+            : 'La salida no coincide con la esperada.',
     })),
     mentorFeedback: feedback,
     requiredImprovements: required,
-    optionalImprovements: [],
+    optionalImprovements: optional,
     estimatedLevel: EstimatedLevel.JUNIOR,
   };
   return recordEvaluation(submissionId, null, input);

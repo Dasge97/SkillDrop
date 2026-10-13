@@ -103,7 +103,18 @@ export function normalizeOutput(logs: string[]): string[] {
 
 export type CodeGrade =
   | { gradable: false; reason: string }
-  | { gradable: true; correct: boolean; expected: string[]; got: string[]; error?: string };
+  | {
+      gradable: true;
+      // 'exact': salida idéntica. 'loose': igual ignorando mayúsculas y espacios
+      // de más. 'none': cualquier otra diferencia (números, orden, líneas, error).
+      match: 'exact' | 'loose' | 'none';
+      expected: string[];
+      got: string[];
+      error?: string;
+    };
+
+// Línea comparable de forma tolerante: minúsculas y espacios colapsados.
+const looseLine = (l: string) => l.toLowerCase().replace(/\s+/g, ' ').trim();
 
 // Compara la salida del alumno con la de la solución de referencia. Si la
 // solución falla o no da siempre la misma salida (p. ej. usa Math.random), el
@@ -120,6 +131,13 @@ export async function gradeAgainstSolution(studentCode: string, solution: string
 
   const run = await runSandboxed(studentCode);
   const got = normalizeOutput(run.logs);
-  const correct = run.ok && JSON.stringify(got) === JSON.stringify(expected);
-  return { gradable: true, correct, expected, got, error: run.error };
+  let match: 'exact' | 'loose' | 'none' = 'none';
+  if (run.ok && JSON.stringify(got) === JSON.stringify(expected)) match = 'exact';
+  else if (
+    run.ok &&
+    JSON.stringify(got.map(looseLine)) === JSON.stringify(expected.map(looseLine))
+  ) {
+    match = 'loose';
+  }
+  return { gradable: true, match, expected, got, error: run.error };
 }
